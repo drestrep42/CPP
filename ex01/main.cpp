@@ -6,52 +6,41 @@
 /*   By: drestrep <drestrep@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/10 18:06:07 by drestrep          #+#    #+#             */
-/*   Updated: 2025/04/10 18:37:14 by drestrep         ###   ########.fr       */
+/*   Updated: 2025/04/24 18:23:03 by drestrep         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "ClassContact.hpp"
 #include "ClassPhoneBook.hpp"
 
-void    add(PhoneBook *phonebook, int i)
-{
-    std::string input;
-    std::cout << "First Name: ";
-    std::cin >> input;
-    phonebook->contact[0].setFirstName(input);
-    std::cout << "Last Name: ";
-    std::cin >> input;
-    phonebook->contact[0].setLastName(input);
-    std::cout << "Nick Name: ";
-    std::cin >> input;
-    phonebook->contact[0].setNickName(input);
-    std::cout << "Phone Number: ";
-    std::cin >> input;
-    phonebook->contact[0].setPhoneNumber(input);
-    std::cout << "Darkest Secret: ";
-    std::cin >> input;
-    phonebook->contact[0].setDarkestSecret(input);
-}
-
 int main(int argc, char **argv)
 {
-    PhoneBook   phonebook;
-    std::string input;
-    int         index;
+	PhoneBook   phonebook;
+	std::string input;
+	int		    index = 0;
 
-    if (argc != 1)
-    {
-        std::cout << USAGE_ERROR << std::endl;
-        exit(1);
-    }
-    while (true)
-    {
-        std::cout << ">";
-        std::cin >> input;
-        std::cout << input << std::endl;
-        if (input.compare("EXIT") == 0)
-            exit(0);
-        else if (input.compare("ADD") == 0)
-            add(&phonebook, index);
-    }
+	if (argc != 1)
+	{
+		std::cout << USAGE_ERROR << std::endl;
+		return (1);
+	}
+	while (true)
+	{
+		std::cout << "> ";
+		if (!std::getline(std::cin, input))
+		{
+			std::cout << std::endl << (char)10;
+			exit(0) ;
+		}
+		if (input == "EXIT")
+			exit(0);
+		else if (input == "ADD")
+			add(&phonebook, &index);
+		else if (input == "SEARCH")
+			search(&phonebook, index);
+		else if (!input.empty())
+			std::cout << INVALID_COMMAND << std::endl;
+		std::cout << std::endl;
+	}
+	return (0);
 }

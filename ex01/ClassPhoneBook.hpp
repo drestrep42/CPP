@@ -6,7 +6,7 @@
 /*   By: drestrep <drestrep@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/10 17:13:44 by drestrep          #+#    #+#             */
-/*   Updated: 2025/04/10 18:35:43 by drestrep         ###   ########.fr       */
+/*   Updated: 2025/04/24 18:38:22 by drestrep         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,5 +19,8 @@ class   PhoneBook  {
     public:
         Contact contact[8];
 };
+
+void	add(PhoneBook *phonebook, int *index);
+void	search(PhoneBook *phonebook, int index);
 
 #endif
