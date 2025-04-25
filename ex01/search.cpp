@@ -6,7 +6,7 @@
 /*   By: drestrep <drestrep@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/10 18:06:07 by drestrep          #+#    #+#             */
-/*   Updated: 2025/04/24 18:21:28 by drestrep         ###   ########.fr       */
+/*   Updated: 2025/04/25 14:20:48 by drestrep         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,6 +32,11 @@ void	display_specific_contact(PhoneBook *phonebook)
 
 	std::cout << "> Select index to display: ";
 	std::getline(std::cin, str);
+	if (str.empty())
+	{
+		std::cout << "Empty input" << std::endl;
+		return ;
+	}
 	index = parse_index(str);
 	if (index < 0 || index > 7)
 	{
