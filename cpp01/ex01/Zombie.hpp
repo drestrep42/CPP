@@ -9,8 +9,8 @@ class Zombie
 		std::string	name;
 	
 	public:
-		Zombie() {};
-		~Zombie() {};
+		Zombie() {}
+		~Zombie() {}
 		void	setName( std::string n) { name = n; }
 		void	announce( void );
 };
