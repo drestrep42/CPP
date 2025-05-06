@@ -6,23 +6,23 @@
 #    By: drestrep <drestrep@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/04/10 16:08:49 by drestrep          #+#    #+#              #
-#    Updated: 2025/04/10 16:34:17 by drestrep         ###   ########.fr        #
+#    Updated: 2025/05/03 16:46:08 by drestrep         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
-NAME	=	megaphone
+NAME		=	megaphone
 
-CC		=	g++
-CFLAGS	=	-g3 -Wall -Wextra -Werror
+CXX			=	c++
+CXXFLAGS	=	-g3 -Wall -Wextra -Werror -std=c++98
 
-SRCS	=	megaphone.cpp
+SRCS		=	megaphone.cpp
 
-OBJS	=	$(SRCS:.cpp=.o)
+OBJS		=	$(SRCS:.cpp=.o)
 
-all:		$(NAME)
+all:			$(NAME)
 
-$(NAME):	$(OBJS)
-	$(CC) $(CFLAGS) $(OBJS) -o $(NAME)
+$(NAME):		$(OBJS)
+	$(CXX) $(CXXFLAGS) $(OBJS) -o $(NAME)
 
 clean:
 	@rm -rf $(OBJS)

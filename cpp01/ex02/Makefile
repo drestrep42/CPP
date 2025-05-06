@@ -1,23 +1,23 @@
-NAME	=	brain
+NAME		=	a.out
 
-CC		=	g++
-CFLAGS	=	-g3 -Wall -Wextra -Werror
+CXX			=	c++
+CXXFLAGS	=	-g3 -Wall -Wextra -Werror -std=c++98
 
-SRCS	=	main.cpp
+SRCS		=	main.cpp
 
-OBJS	=	$(SRCS:.cpp=.o)
+OBJS		=	$(SRCS:.cpp=.o)
 
-all:		$(NAME)
+all			:	$(NAME)
 
-$(NAME):	$(OBJS)
-	$(CC) $(CFLAGS) $(OBJS) -o $(NAME)
+$(NAME)		:	$(OBJS)
+	$(CXX)		$(CXXFLAGS) $(OBJS) -o $(NAME)
 
-clean:
-	@rm -rf $(OBJS)
+clean		:
+	@rm -rf 	$(OBJS)
 	
-fclean: clean	
-	@rm -rf $(NAME)
+fclean		:	clean	
+	@rm -rf 	$(NAME)
 
-re: fclean all
+re			:	fclean all
 
 .PHONY: all clean fclean re

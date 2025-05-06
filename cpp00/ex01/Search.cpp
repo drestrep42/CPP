@@ -1,20 +1,21 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   search.cpp                                         :+:      :+:    :+:   */
+/*   Search.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: drestrep <drestrep@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/10 18:06:07 by drestrep          #+#    #+#             */
-/*   Updated: 2025/04/25 14:20:48 by drestrep         ###   ########.fr       */
+/*   Updated: 2025/05/06 16:39:34 by drestrep         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "ClassContact.hpp"
-#include "ClassPhoneBook.hpp"
+#include "Contact.hpp"
+#include "PhoneBook.hpp"
 
 int	parse_index(std::string str)
 {
+	int	nbr;
 	int	i = -1;
 
 	while (str[++i])
@@ -22,7 +23,9 @@ int	parse_index(std::string str)
 		if (!isdigit(str[i]) && str[i] != ' ')
 			return (-1);
 	}
-	return (std::stoi(str));
+	std::istringstream iss(str);
+	iss >> nbr;
+	return (nbr);
 }
 
 void	display_specific_contact(PhoneBook *phonebook)
@@ -92,7 +95,8 @@ void	display_contacts(PhoneBook *phonebook)
 	{
 		std::cout << "|";
 		std::cout << std::right << std::setw(10) << i;
-		for (int j = 0; j < 3; j)
+		int	j = 0;
+		while (j < 3)
 			display_info(phonebook->contact[i], &j);
 		std::cout << "|" << std::endl;
 		for (int k = 0; k < 45; k++)
@@ -102,7 +106,7 @@ void	display_contacts(PhoneBook *phonebook)
 	std::cout << std::endl;
 }
 
-void	search(PhoneBook *phonebook, int index)
+void	search(PhoneBook *phonebook)
 {
 	display_contacts(phonebook);
 	display_specific_contact(phonebook);
