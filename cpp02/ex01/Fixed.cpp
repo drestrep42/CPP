@@ -18,9 +18,15 @@ Fixed& Fixed::operator=(const Fixed& copy) {
 }
 
 Fixed::Fixed(const int nbr) {
-	;
+	std::cout << "Int constructor called" << std::endl;
+	_value = nbr << _mantissa;
 }
-Fixed(const float nbr);
+
+Fixed::Fixed(const float nbr) {
+	std::cout << "Float constructor called" << std::endl;
+	_value = nbr * (1 << _mantissa);
+}
+
 Fixed::~Fixed() {
 	std::cout << "Destructor called" << std::endl;
 }
@@ -32,4 +38,16 @@ int		Fixed::getRawBits( void ) const {
 void	Fixed::setRawBits( int const raw ) {
 	std::cout << "setRawBits member function called" << std::endl;
 	_value = raw;
+}
+
+float	Fixed::toFloat( void ) const {
+	return (static_cast<float>(_value) / (1 << _mantissa));
+}
+
+int	Fixed::toInt( void ) const {
+	return (_value >> _mantissa);
+}
+
+std::ostream& operator<<(std::ostream& os, const Fixed& fixed) {
+	return (os << fixed.toFloat());
 }
