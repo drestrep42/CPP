@@ -17,9 +17,9 @@ void	ClapTrap::attack(const std::string& target) {
 }
 
 void	ClapTrap::takeDamage(unsigned int amount) {
-	std::cout << "ClapTrap " << _name << " lost " << amount << " HP!" << std::endl;	
+	std::cout << "ClapTrap " << _name << " took " << amount << " HP " << std::endl;	
 }
 
 void	ClapTrap::beRepaired(unsigned int amount) {
-	std::cout << "ClapTrap " << _name << " healed " << amount << " HP!" << std::endl;	
+	std::cout << "ClapTrap " << _name << " repaired " << amount << " of HP " << std::endl;	
 }
