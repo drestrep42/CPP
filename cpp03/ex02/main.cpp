@@ -1,5 +1,6 @@
 #include "ClapTrap.hpp"
 #include "ScavTrap.hpp"
+#include "FragTrap.hpp"
 
 int	main()
 {
@@ -11,4 +12,14 @@ int	main()
 	Turtwig.attack("Piplup");
 	Piplup.takeDamage(5);
 	Piplup.beRepaired(1);
+
+	std::cout << std::endl;
+
+	FragTrap Chimchar("Chimchar");
+
+	std::cout << std::endl;
+
+	Piplup.attack("Chimchar");
+	Chimchar.takeDamage(5);
+	Chimchar.beRepaired(1);
 }
