@@ -16,12 +16,18 @@ int main()
 	j->makeSound();
 	meta->makeSound();
 
-	const WrongAnimal *feka = new WrongAnimal();
+	const WrongAnimal *falseAnimal = new WrongAnimal();
 	const WrongAnimal *falseCat = new WrongCat();
 
 	std::cout << falseCat->getType() << " " << std::endl;
 	falseCat->makeSound();
-	feka->makeSound();
+	falseAnimal->makeSound();
 
-	return 0;
+	delete(meta);
+	delete(j);
+	delete(i);
+	delete(falseAnimal);
+	delete(falseCat);
+
+	return (0);
 }
