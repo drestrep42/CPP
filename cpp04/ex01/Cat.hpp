@@ -20,6 +20,9 @@ class Cat: public Animal
 
 		std::string	getType();
 		void		setType(std::string type);
+
+		std::string	getIdea(int nbr) const;
+		void		setIdea(std::string idea, int nbr);
 };
 
 #endif

@@ -5,6 +5,7 @@ Dog::Dog() {
 
 	_type = "Dog";
 	_brain = new Brain();
+	std::cout << std::endl;
 }
  
 Dog::~Dog() {
@@ -24,6 +25,7 @@ Dog&	Dog::operator=(const Dog& copy) {
 
 	if (this != &copy) {
 		this->_type = copy._type;
+		this->_brain = copy._brain;
 	}
 	return (*this);
 }
@@ -33,5 +35,13 @@ std::string	Dog::getType() {
 }
 
 void	Dog::setType(std::string type) {
-	this->_type = type;
+	_type = type;
+}
+
+std::string	Dog::getIdea(int nbr) const {
+	return (_brain->getIdea(nbr));
+}
+
+void		Dog::setIdea(std::string idea, int nbr) {
+	_brain->setIdea(idea, nbr);
 }

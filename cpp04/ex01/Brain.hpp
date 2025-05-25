@@ -2,11 +2,12 @@
 # define BRAIN_HPP
 
 #include <iostream>
+#include <sstream>
 
 class Brain
 {
 	private:
-		std::string _ideas[100];
+		std::string _idea[100];
 
 	public:
 		Brain();
@@ -15,8 +16,8 @@ class Brain
 		Brain(const Brain& copy);
 		Brain&	operator=(const Brain& copy);
 
-		std::string	getIdeas(int nbr) const;
-		void		setIdeas(std::string idea, int nbr);
+		std::string	getIdea(int nbr) const;
+		void		setIdea(std::string idea, int nbr);
 };
 
 #endif

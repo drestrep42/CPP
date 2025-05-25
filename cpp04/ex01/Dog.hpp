@@ -6,7 +6,7 @@
 #include "Animal.hpp"
 #include "Brain.hpp"
 
-class Dog: public Animal
+class Dog: virtual public Animal
 {
 	private:
 		Brain*	_brain;
@@ -20,6 +20,9 @@ class Dog: public Animal
 
 		std::string	getType();
 		void		setType(std::string type);
+
+		std::string	getIdea(int nbr) const;
+		void		setIdea(std::string idea, int nbr);
 };
 
 #endif

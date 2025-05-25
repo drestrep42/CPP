@@ -5,6 +5,7 @@ Cat::Cat() {
 
 	_type = "Cat";
 	_brain = new Brain();
+	std::cout << std::endl;
 }
  
 Cat::~Cat() {
@@ -24,6 +25,7 @@ Cat&	Cat::operator=(const Cat& copy) {
 
 	if (this != &copy) {
 		this->_type = copy._type;
+		this->_brain = copy._brain;
 	}
 	return (*this);
 }
@@ -33,5 +35,13 @@ std::string	Cat::getType() {
 }
 
 void	Cat::setType(std::string type) {
-	this->_type = type;
+	_type = type;
+}
+
+std::string	Cat::getIdea(int nbr) const {
+	return (_brain->getIdea(nbr));
+}
+
+void		Cat::setIdea(std::string idea, int nbr) {
+	_brain->setIdea(idea, nbr);
 }
