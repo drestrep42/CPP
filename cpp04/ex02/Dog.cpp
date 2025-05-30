@@ -42,10 +42,10 @@ std::string	Dog::getIdea(int nbr) const {
 	return (_brain->getIdea(nbr));
 }
 
-void		Dog::setIdea(std::string idea, int nbr) {
+void	Dog::setIdea(std::string idea, int nbr) {
 	_brain->setIdea(idea, nbr);
 }
 
 void	Dog::makeSound() const {
-	std::cout << "Guau" << std::endl;
+	std::cout << "Dog" << std::endl;
 }

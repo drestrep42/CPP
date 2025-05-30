@@ -1,22 +1,22 @@
-#ifndef CAT_HPP
-# define CAT_HPP
+#ifndef DOG_HPP
+# define DOG_HPP
 
 #include <iostream>
 
 #include "Animal.hpp"
 #include "Brain.hpp"
 
-class Cat: public Animal
+class Dog: virtual public Animal
 {
 	private:
 		Brain*	_brain;
 
 	public:
-		Cat();
-		~Cat();
+		Dog();
+		~Dog();
 
-		Cat(const Cat& copy);
-		Cat&	operator=(const Cat& copy);
+		Dog(const Dog& copy);
+		Dog&	operator=(const Dog& copy);
 
 		std::string	getType();
 		void		setType(std::string type);
@@ -25,6 +25,7 @@ class Cat: public Animal
 		void		setIdea(std::string idea, int nbr);
 
 		void		makeSound() const;
+
 };
 
 #endif

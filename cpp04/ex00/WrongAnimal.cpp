@@ -32,10 +32,5 @@ void	WrongAnimal::setType(std::string type) {
 }
 
 void	WrongAnimal::makeSound() const {
-	if (_type.compare("WrongDog") == 0)
-		std::cout << "Miau? 🤨" << std::endl;
-	else if (_type.compare("WrongCat") == 0)
-		std::cout << "Guau? 🤨" << std::endl;
-	else
-		std::cout << "*Unknown onomatopoeia*" << std::endl;
+	std::cout << "*This animal makes all sounds*" << std::endl;
 }

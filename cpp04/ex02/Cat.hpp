@@ -25,6 +25,7 @@ class Cat: public Animal
 		void		setIdea(std::string idea, int nbr);
 
 		void		makeSound() const;
+
 };
 
 #endif

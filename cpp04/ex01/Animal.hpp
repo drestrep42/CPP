@@ -15,10 +15,10 @@ class Animal
 		Animal(const Animal& copy);
 		Animal&	operator=(const Animal& copy);
 
-		std::string	getType() const;
-		void		setType(std::string type);
+		std::string		getType() const;
+		void			setType(std::string type);
 
-		void		makeSound() const;
+		virtual void	makeSound() const;
 };
 
 #endif

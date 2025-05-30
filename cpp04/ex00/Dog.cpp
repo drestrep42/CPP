@@ -31,3 +31,7 @@ std::string	Dog::getType() {
 void	Dog::setType(std::string type) {
 	this->_type = type;
 }
+
+void	Dog::makeSound() const {
+	std::cout << "Guau" << std::endl;
+}

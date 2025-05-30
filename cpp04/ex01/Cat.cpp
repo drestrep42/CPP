@@ -45,3 +45,7 @@ std::string	Cat::getIdea(int nbr) const {
 void		Cat::setIdea(std::string idea, int nbr) {
 	_brain->setIdea(idea, nbr);
 }
+
+void	Cat::makeSound() const {
+	std::cout << "Miau" << std::endl;
+}

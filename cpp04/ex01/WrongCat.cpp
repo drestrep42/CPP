@@ -31,3 +31,7 @@ std::string	WrongCat::getType() {
 void	WrongCat::setType(std::string type) {
 	this->_type = type;
 }
+
+void	WrongCat::makeSound() const {
+	std::cout << "Guau???" << std::endl;
+}
