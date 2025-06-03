@@ -39,10 +39,18 @@ void	Dog::setType(std::string type) {
 }
 
 std::string	Dog::getIdea(int nbr) const {
+	if (nbr < 0 || nbr > 99)
+		return ("Idea number has to be between 0 and 99");
 	return (_brain->getIdea(nbr));
 }
 
-void	Dog::setIdea(std::string idea, int nbr) {
+void		Dog::setIdea(std::string idea, int nbr) {
+	if (nbr < 0) {
+		std::cout << "Idea number has to be positive" << std::endl;
+		return ;
+	}
+	if (nbr >= 100)
+		nbr = nbr - 100;
 	_brain->setIdea(idea, nbr);
 }
 
