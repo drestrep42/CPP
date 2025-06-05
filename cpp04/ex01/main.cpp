@@ -21,7 +21,8 @@ int main()
 	std::cout << dog.getIdea(-1) << std::endl;
 	std::cout << dog.getIdea(1) << std::endl;
 
-	dog.setIdea("This is the idea 101", 101);
+	for (int i = 0; i < 101; i++)
+		dog.setIdea("This is the idea ", i);
 
 	std::cout << dog.getIdea(1) << std::endl;
 

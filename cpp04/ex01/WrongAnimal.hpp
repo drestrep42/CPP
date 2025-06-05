@@ -15,10 +15,10 @@ class WrongAnimal
 		WrongAnimal(const WrongAnimal& copy);
 		WrongAnimal&	operator=(const WrongAnimal& copy);
 
-		std::string		getType() const;
-		void			setType(std::string type);
+		std::string	getType() const;
+		void		setType(std::string type);
 
-		virtual void	makeSound() const;
+		void		makeSound() const;
 };
 
 #endif

@@ -17,7 +17,7 @@ Cat::~Cat() {
 Cat::Cat(const Cat& copy) {
 	std::cout << "Cat copy constructor called" << std::endl;
 
-	this->operator=(copy);
+	*this = copy;
 }
 
 Cat&	Cat::operator=(const Cat& copy) {
@@ -25,7 +25,7 @@ Cat&	Cat::operator=(const Cat& copy) {
 
 	if (this != &copy) {
 		this->_type = copy._type;
-		this->_brain = copy._brain;
+		this->_brain = new Brain (*copy._brain);
 	}
 	return (*this);
 }

@@ -12,7 +12,7 @@ Dog::~Dog() {
 Dog::Dog(const Dog& copy) {
 	std::cout << "Dog copy constructor called" << std::endl;
 
-	this->operator=(copy);
+	*this = copy;
 }
 
 Dog&	Dog::operator=(const Dog& copy) {
