@@ -25,14 +25,16 @@ class Bureaucrat
 		void				decrementGrade();
 
 
-		class GradeTooHighException : public std::exception  { // This could also be defined as struct
-			virtual const char*	what() const throw() {
+		class GradeTooHighException : public std::exception  {
+			public:
+				virtual const char*	what() const throw() {
 					return ("The highest possible grade is 1!");
 				}
 		};
 
 		class GradeTooLowException : public std::exception {
-			virtual const char*	what() const throw() {
+			public:
+				virtual const char*	what() const throw() {
 					return ("The lowest possible grade is 150!");
 				}
 		};
