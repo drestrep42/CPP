@@ -13,7 +13,7 @@ int main()
 	std::cout << std::endl << std::endl;
 	try
 	{
-		Bureaucrat Andrei("Andrei", 151);
+		Bureaucrat Andrii("Andrii", 151);
 	}
 	catch(std::exception& e)
 	{

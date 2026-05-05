@@ -23,12 +23,13 @@ class Form
 		Form&	operator=(const Form& copy);
 
 		const std::string	getName() const;
-		bool				getSigned();
+		bool				getSigned() const;
 		const int			getGrade2Sign() const;	
 		const int			getGrade2Execute() const;
 
 		bool				beSigned(Bureaucrat bureaucrat);
 
+		
 		class GradeTooHighException : public std::exception  {
 			public:
 				virtual const char*	what() const throw() {
