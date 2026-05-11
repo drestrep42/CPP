@@ -1,13 +1,13 @@
 #include "Form.hpp"
 
-Form::Form() : _name("MissingNo"), _signed(false), \
+Form::Form() : _name("MissingNo"), _is_signed(false), \
 			_grade2sign(75), _grade2execute(75) {
 	std::cout << "Form default constructor called" << std::endl;
 }
 
-Form::Form(const std::string name, bool sign, \
+Form::Form(const std::string name, bool is_signed, \
 			const int grade2sign, const int grade2execute) : _name(name),
-			_sign(sign), _grade2sign(grade2sign), _grade2execute(grade2execute) {
+			_is_signed(is_signed), _grade2sign(grade2sign), _grade2execute(grade2execute) {
 	std::cout << "Form default constructor called" << std::endl;
 
 	if (grade2sign < 1 || grade2execute < 1)
@@ -28,12 +28,7 @@ Form::Form(const Form& copy) {
 
 Form&	Form::operator=(const Form& copy) {
 
-	if (this != &copy) {
-		this->_grade = copy._grade;
-		this->_sign = copy._sign;
-		this->_grade2sign = copy._grade2sign;
-		this->_grade2execute = copy._grade2execute;
-	}
+	_is_signed = copy._is_signed;
 	return (*this);
 }
 
@@ -42,7 +37,7 @@ const std::string	Form::getName() const {
 }
 
 bool	Form::getSigned() const {
-	return (_sign);
+	return (_is_signed);
 }
 const int	Form::getGrade2Sign() const {	
 	return (_grade2sign);
@@ -55,20 +50,8 @@ bool	Form::beSigned(Bureaucrat bureaucrat) {
 	if (bureaucrat.getGrade() > _grade2sign)
 		throw GradeTooLowException();
 	else
-		_sign = true;
-	return (_sign);
-}
-
-void	Form::incrementGrade() {
-	if (_grade == 1)
-		throw GradeTooHighException();
-	_grade--;
-}
-
-void	Form::decrementGrade() {
-	if (_grade == 150)
-		throw GradeTooLowException();
-	_grade++;
+		_is_signed = true;
+	return (_is_signed);
 }
 
 std::ostream& operator<<(std::ostream& os, const Form& form) {

@@ -1,6 +1,6 @@
 #include "AForm.hpp"
 
-AForm::AForm() : _name("MissingNo"), _signed(false), \
+AForm::AForm() : _name("MissingNo"), _sign(false), \
 			_grade2sign(75), _grade2execute(75) {
 	std::cout << "AForm default constructor called" << std::endl;
 }
@@ -28,8 +28,9 @@ AForm::AForm(const AForm& copy) {
 
 AForm&	AForm::operator=(const AForm& copy) {
 
+	if (this == &copy)
+		return (*this);
 	if (this != &copy) {
-		this->_grade = copy._grade;
 		this->_sign = copy._sign;
 		this->_grade2sign = copy._grade2sign;
 		this->_grade2execute = copy._grade2execute;
