@@ -9,7 +9,7 @@ class AForm
 {
 	private:
 		const std::string	_name;
-		bool				_sign;
+		bool				_is_signed;
 		const int			_grade2sign;
 		const int			_grade2execute;
 
@@ -23,12 +23,12 @@ class AForm
 		AForm(const AForm& copy);
 		AForm&	operator=(const AForm& copy);
 
-		const std::string	&getName() const;
-		bool				&getSigned() const;
-		const int			&getGrade2Sign() const;	
-		const int			&getGrade2Execute() const;
+		const std::string	getName() const;
+		bool				getSigned() const;
+		int					getGrade2Sign() const;	
+		int					getGrade2Execute() const;
 
-		void				beSigned(Bureaucrat &bureaucrat);
+		bool				beSigned(Bureaucrat &bureaucrat);
 		virtual void		execute(Bureaucrat const& executor) const = 0;
 
 		
@@ -43,6 +43,20 @@ class AForm
 			public:
 				virtual const char*	what() const throw() {
 					return ("The lowest possible grade is 150!");
+				}
+		};
+
+		class BureaucratTooLowException : public std::exception {
+			public:
+				virtual const char*	what() const throw() {
+					return ("the bureaucrat's grade is too low to sign the form!");
+				}
+		};
+
+		class FormShouldBeUnsignedException : public std::exception {
+			public:
+				virtual const char*	what() const throw() {
+					return ("The form should be unsigned!");
 				}
 		};
 

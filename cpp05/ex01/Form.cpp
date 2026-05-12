@@ -28,7 +28,6 @@ Form::Form(const Form& copy) : _name(copy._name), _is_signed(copy._is_signed), \
 }
 
 Form&	Form::operator=(const Form& copy) {
-
 	_is_signed = copy._is_signed;
 	return (*this);
 }
