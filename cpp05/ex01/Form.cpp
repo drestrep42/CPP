@@ -14,16 +14,17 @@ Form::Form(const std::string name, bool is_signed, \
 		throw GradeTooHighException();
 	if (grade2sign > 150 || grade2execute > 150)
 		throw GradeTooLowException();
+	if (is_signed)
+		throw FormShouldBeUnsignedException();
 }
 
 Form::~Form() {
 	std::cout << "Form default destructor called" << std::endl;
 }
 
-Form::Form(const Form& copy) {
+Form::Form(const Form& copy) : _name(copy._name), _is_signed(copy._is_signed), \
+			_grade2sign(copy._grade2sign), _grade2execute(copy._grade2execute) {
 	std::cout << "Form copy constructor called" << std::endl;
-
-	*this = copy;
 }
 
 Form&	Form::operator=(const Form& copy) {
@@ -39,16 +40,18 @@ const std::string	Form::getName() const {
 bool	Form::getSigned() const {
 	return (_is_signed);
 }
-const int	Form::getGrade2Sign() const {	
+
+int	Form::getGrade2Sign() const {	
 	return (_grade2sign);
 }
-const int	Form::getGrade2Execute() const {
+
+int	Form::getGrade2Execute() const {
 	return (_grade2execute);
 }
 
-bool	Form::beSigned(Bureaucrat bureaucrat) {
+bool	Form::beSigned(Bureaucrat &bureaucrat) {
 	if (bureaucrat.getGrade() > _grade2sign)
-		throw GradeTooLowException();
+		throw BureaucratTooLowException();
 	else
 		_is_signed = true;
 	return (_is_signed);

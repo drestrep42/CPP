@@ -24,10 +24,10 @@ class Form
 
 		const std::string	getName() const;
 		bool				getSigned() const;
-		const int					getGrade2Sign() const;	
-		const int					getGrade2Execute() const;
+		int					getGrade2Sign() const;	
+		int					getGrade2Execute() const;
 
-		bool				beSigned(Bureaucrat bureaucrat);
+		bool				beSigned(Bureaucrat &bureaucrat);
 
 		
 		class GradeTooHighException : public std::exception  {
@@ -41,6 +41,20 @@ class Form
 			public:
 				virtual const char*	what() const throw() {
 					return ("The lowest possible grade is 150!");
+				}
+		};
+
+		class BureaucratTooLowException : public std::exception {
+			public:
+				virtual const char*	what() const throw() {
+					return ("the bureaucrat's grade is too low to sign the form!");
+				}
+		};
+
+		class FormShouldBeUnsignedException : public std::exception {
+			public:
+				virtual const char*	what() const throw() {
+					return ("The form should be unsigned!");
 				}
 		};
 };

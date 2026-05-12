@@ -10,7 +10,7 @@ int main()
 
 	std::cout << std::endl;
 
-	try{
+	try {
 		Bureaucrat Andrei("Andrei", 151);
 	} catch(std::exception& e) {
 		std::cerr << e.what() << '\n';
