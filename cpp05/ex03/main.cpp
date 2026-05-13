@@ -7,21 +7,29 @@
 
 int main(void)
 {
-
-	ShrubberyCreationForm shrubbery("Home");
-	RobotomyRequestForm robotomy("Morty");
-	PresidentialPardonForm pardon("Rick Sanchez");
-
-	std::cout << "\n --------------------- \n\n";
-
+	AForm* form;
 	{
 		Intern someRandomIntern;
-		AForm* rrf;
-		rrf = someRandomIntern.makeForm("robotomy request", "Bender");
+		form = someRandomIntern.makeForm("robotomy request", "Pepe");
+		delete form;
 	}
 	
 	std::cout << "\n --------------------- \n\n";
+	
+	{
+		Intern someRandomIntern;
+		form = someRandomIntern.makeForm("shrubbery creation form", "Marvin");
+		delete form;
+	}
 
-
+	std::cout << "\n --------------------- \n\n";
+	
+	{
+		Intern someRandomIntern;
+		form = someRandomIntern.makeForm("presidential pardon form", "Gerundio");
+		delete form;
+	}
+	
+	std::cout << "\n --------------------- \n\n";
 	return (0);
 }
