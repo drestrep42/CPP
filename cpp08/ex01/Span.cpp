@@ -49,3 +49,11 @@ int Span::longestSpan()
 	}
 	return *std::max_element(_numbers.begin(), _numbers.end()) - *std::min_element(_numbers.begin(), _numbers.end());
 }
+
+void Span::addMultipleNumbers(const std::vector<int>& numbers)
+{
+	if (_numbers.size() + numbers.size() > _maxSize) {
+		throw std::runtime_error("Adding these numbers would exceed Span capacity");
+	}
+	_numbers.insert(_numbers.end(), numbers.begin(), numbers.end());
+}

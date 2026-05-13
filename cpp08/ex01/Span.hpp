@@ -20,6 +20,8 @@ class Span
 		void addNumber(int n);
 		int shortestSpan();
 		int longestSpan();
+
+		void addMultipleNumbers(const std::vector<int>& numbers);
 };
 
 #endif
