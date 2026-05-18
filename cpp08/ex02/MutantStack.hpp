@@ -4,36 +4,19 @@
 #include <stack>
 #include <iterator>
 
-class MutantStack : public std::stack<int>
+template <typename T>
+class MutantStack : public std::stack<T>
 {
 	public:
 		MutantStack();
-
-		template <typename T>
-		MutantStack(T value);
-		template <typename T>
-		MutantStack(const MutantStack<T>& other) : std::stack<int>(other) {};
-
+		MutantStack(const MutantStack<T>& other);
+		MutantStack& operator=(const MutantStack<T>& other);
 		~MutantStack();
 
-		typedef std::stack<int>::container_type::iterator iterator;
+		typedef typename std::stack<T>::container_type::iterator iterator;
 
 		iterator begin();
 		iterator end();
 };
-
-MutantStack::MutantStack() {}
-
-MutantStack::~MutantStack(){}
-
-MutantStack::iterator MutantStack::begin()
-{
-	return this->c.begin();
-}
-
-MutantStack::iterator MutantStack::end()
-{
-	return this->c.end();
-}
 
 #endif
