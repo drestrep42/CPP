@@ -12,6 +12,16 @@ Span::~Span() {
 	std::cout << "Destructor called" << std::endl;
 }
 
+Span& Span::operator=(const Span& other)
+{
+	if (this != &other)
+	{
+		_maxSize = other._maxSize;
+		_numbers = other._numbers;
+	}
+	return *this;
+}
+
 void Span::addNumber(int n)
 {
 	if (_numbers.size() >= _maxSize)
@@ -48,12 +58,4 @@ int Span::longestSpan()
 		throw std::runtime_error("Not enough numbers");
 	}
 	return *std::max_element(_numbers.begin(), _numbers.end()) - *std::min_element(_numbers.begin(), _numbers.end());
-}
-
-void Span::addMultipleNumbers(const std::vector<int>& numbers)
-{
-	if (_numbers.size() + numbers.size() > _maxSize) {
-		throw std::runtime_error("Adding these numbers would exceed Span capacity");
-	}
-	_numbers.insert(_numbers.end(), numbers.begin(), numbers.end());
 }
