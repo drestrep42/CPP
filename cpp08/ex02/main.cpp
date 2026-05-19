@@ -1,6 +1,7 @@
 #include "MutantStack.hpp"
 #include "MutantStack.tpp"
 #include <iostream>
+#include <list>
 
 int main()
 {
@@ -9,10 +10,12 @@ int main()
 	mstack.push(5);
 	mstack.push(17);
 	std::cout << "Top element: " << mstack.top() << std::endl;
-	mstack.pop();
 	std::cout << "Size: " << mstack.size() << std::endl;
+	mstack.pop();
 
-	std::cout << "\n --------------------- \n\n";
+	std::cout << std::endl;
+	std::cout << "Top element: " << mstack.top() << std::endl;
+	std::cout << "Size: " << mstack.size() << std::endl;
 
 	mstack.push(3);
 	mstack.push(5);
