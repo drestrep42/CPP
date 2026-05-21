@@ -24,14 +24,17 @@ class Span
 		int longestSpan();
 		
 		template <class it>
-		void addMultipleNumbers(it first, it last) {
-			while (first != last) {
-				if (_numbers.size() == _maxSize)
-					throw std::runtime_error("Adding these numbers would exceed Span capacity");
-				_numbers.insert(_numbers.end(), first, last);
-				first++;
-			}
-		}
+        void addMultipleNumbers(it first, it last) {
+            typedef typename std::iterator_traits<it>::difference_type diff_t;
+        	diff_t d = std::distance(first, last);
+        	if (d < 0)
+        	    throw std::runtime_error("Invalid range");
+        	std::vector<int>::size_type need = static_cast<std::vector<int>::size_type>(d);
+        	std::vector<int>::size_type max = static_cast<std::vector<int>::size_type>(_maxSize);
+        	if (_numbers.size() + need > max)
+        	    throw std::runtime_error("Adding these numbers would exceed Span capacity");
+        	_numbers.insert(_numbers.end(), first, last);
+        }
 
 };
 
