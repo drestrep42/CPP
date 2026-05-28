@@ -2,6 +2,8 @@
 # define BITCOINEXCHANGE_HPP
 
 #include <iostream>
+#include <sstream>
+#include <fstream>
 #include <string>
 #include <map>
 
@@ -12,12 +14,15 @@ class BitcoinExchange {
 
 	public:
 	    BitcoinExchange();
+		BitcoinExchange(const std::string& db);
 		BitcoinExchange(const BitcoinExchange& other);
 		BitcoinExchange& operator=(const BitcoinExchange& other);
 	    ~BitcoinExchange();
 
 	    void addExchangeRate(const std::string& date, float rate);
 	    float getExchangeRate(const std::string& date) const;
+
+		void run();
 };
 
 #endif
