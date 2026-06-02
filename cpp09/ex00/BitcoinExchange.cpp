@@ -3,6 +3,7 @@
 BitcoinExchange::BitcoinExchange() {}
 
 BitcoinExchange::BitcoinExchange(const std::string& db) {
+
     std::ifstream file(db.c_str());
     if (!file) {
         std::cerr << "Error opening database file: " << db << std::endl;
@@ -10,6 +11,12 @@ BitcoinExchange::BitcoinExchange(const std::string& db) {
     }
 
     std::string line;
+    std::getline(file, line);
+    if (line != "date | value") {
+        std::cerr << "Invalid database format" << std::endl;
+        return;
+    }
+    std::cout << "Database loaded successfully" << std::endl;
     while (std::getline(file, line)) {
         std::istringstream iss(line);
         std::string date;
@@ -25,10 +32,12 @@ BitcoinExchange::BitcoinExchange(const std::string& db) {
 }
 
 BitcoinExchange::BitcoinExchange(const BitcoinExchange& other) {
+
     _exchangeRates = other._exchangeRates;
 }
 
 BitcoinExchange& BitcoinExchange::operator=(const BitcoinExchange& other) {
+
     if (this != &other) {
         _exchangeRates = other._exchangeRates;
     }
@@ -38,10 +47,12 @@ BitcoinExchange& BitcoinExchange::operator=(const BitcoinExchange& other) {
 BitcoinExchange::~BitcoinExchange() {}
 
 void BitcoinExchange::addExchangeRate(const std::string& date, float rate) {
+
     _exchangeRates[date] = rate;
 }
 
 float BitcoinExchange::getExchangeRate(const std::string& date) const {
+
     std::map<std::string, float>::const_iterator it = _exchangeRates.find(date);
     if (it != _exchangeRates.end()) {
         return it->second;
@@ -50,6 +61,7 @@ float BitcoinExchange::getExchangeRate(const std::string& date) const {
 }
 
 void BitcoinExchange::run() {
+
     std::string line;
     while (std::getline(std::cin, line)) {
         std::istringstream iss(line);
