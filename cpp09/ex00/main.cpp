@@ -7,8 +7,8 @@ int main (int argc, char *argv[])
 		return 1;
 	}
 
-	BitcoinExchange exchange(argv[1]);
-	exchange.run();
+	BitcoinExchange exchange;
+	exchange.run(argv[1]);
 
 	return 0;
 }
