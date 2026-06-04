@@ -16,7 +16,7 @@ RPN& RPN::operator=(const RPN& other) {
     return *this;
 }
 
-void RPN::evaluate(const std::string& expression)
+int RPN::evaluate(const std::string& expression)
 {
     std::istringstream input(expression);
     std::string token;
@@ -69,9 +69,9 @@ void RPN::evaluate(const std::string& expression)
     if (_stack.size() != 1) {
         throw std::runtime_error("Invalid expression");
     }
+
+	int result = _stack.top();
+    _stack.pop();
+    return result;
 }
 
-int RPN::top() const
-{
-    return _stack.top();
-}

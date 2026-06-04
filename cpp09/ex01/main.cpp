@@ -9,8 +9,8 @@ int main(int argc, char *argv[])
 
     RPN rpn;
     try {
-        rpn.evaluate(argv[1]);
-        std::cout << "Result: " << rpn.top() << std::endl;
+		int result = rpn.evaluate(argv[1]);
+        std::cout << "Result: " << result << std::endl;
     } catch (const std::exception& e) {
         std::cerr << "Error: " << e.what() << std::endl;
         return 1;

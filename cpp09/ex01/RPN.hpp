@@ -15,8 +15,7 @@ class RPN {
         RPN(const RPN& other);
         RPN& operator=(const RPN& other);
 
-        void evaluate(const std::string& expression);
-        int top() const;
+        int evaluate(const std::string& expression);
 };
 
 #endif
