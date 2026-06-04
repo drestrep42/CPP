@@ -6,19 +6,17 @@
 #include <string>
 
 class RPN {
-private:
-    std::stack<int> _stack;
+    private:
+        std::stack<int> _stack;
 
-public:
-    RPN();
-    ~RPN();
-    RPN(const RPN& other);
-    RPN& operator=(const RPN& other);
+    public:
+        RPN();
+        ~RPN();
+        RPN(const RPN& other);
+        RPN& operator=(const RPN& other);
 
-    void evaluate(const std::string& expression);
-    void push(int value);
-    int pop();
-    int top();
+        void evaluate(const std::string& expression);
+        int top() const;
 };
 
 #endif
