@@ -86,27 +86,6 @@ void BitcoinExchange::readDb() {
     }
 }
 
-/* double BitcoinExchange::findClosestDate(const std::string& date) {
-
-	std::map<std::string, double>::iterator it = _exchangeRates.lower_bound(date);
-	if (it == _exchangeRates.end()) {
-		return (--it)->second;
-	} else if (it == _exchangeRates.begin()) {
-		return it->second;
-	} else {
-		std::map<std::string, double>::iterator prev_it = it;
-		--prev_it;
-
-		double upper_diff = std::fabs(it->first.compare(date));
-		double lower_diff = std::fabs(prev_it->first.compare(date));
-		if (upper_diff < lower_diff) {
-			return it->second;
-		}
-		return prev_it->second;
-	}
-	return -1;
-} */
-
 std::map<std::string, double>::iterator BitcoinExchange::findClosestDate(const std::string& date) {
 
 	if (_exchangeRates.find(date) != _exchangeRates.end()) {
@@ -129,7 +108,7 @@ std::map<std::string, double>::iterator BitcoinExchange::findClosestDate(const s
 		}
 		return prev_it;
 	}
-	return _exchangeRates.end();
+	return it;
 }
 
 void BitcoinExchange::multiplyExchangeRate(const std::string& date, double factor) {
@@ -140,6 +119,7 @@ void BitcoinExchange::multiplyExchangeRate(const std::string& date, double facto
 
 void BitcoinExchange::run(const std::string& input_file) {
 
+	int line_number = 1;
     std::string line;
 	std::ifstream input(input_file.c_str());
 
@@ -156,24 +136,30 @@ void BitcoinExchange::run(const std::string& input_file) {
 
 	while (std::getline(input, line)) {
 
+		line_number++;
 		if (line.find('|') == std::string::npos) {
-            std::cerr << "Invalid line format: " << line << std::endl;
+            std::cerr << "Invalid line format in line " << line_number << std::endl;
             continue;
         }
 		line.erase(line.find('|'), 1);
 
         std::istringstream iss(line);
         std::string date;
-        long value;
+        double value;
 		iss >> date >> value;
 
+		if (!iss.eof()) {
+			std::cerr << "Invalid line format in line " << line_number << std::endl;
+			continue;
+		}
+
 		if (!validateDate(date)) {
-			std::cerr << "Invalid date in line: " << line << std::endl;
+			std::cerr << "Invalid date in line " << line_number << ": " << date << std::endl;
 			continue;
 		}
 
 		if (value < 0 || value > 1000) {
-			std::cerr << "Invalid value: " << value << " - Value must be between 0 and 1000" << std::endl;
+			std::cerr << "Invalid value in line " << line_number << ": Value must be between 0 and 1000" << std::endl;
 			continue;
 		}
 		multiplyExchangeRate(date, value);

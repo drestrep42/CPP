@@ -19,7 +19,6 @@ class BitcoinExchange {
 		void printExchangeRates() const;
 		bool validateDate(const std::string& date);
 		void multiplyExchangeRate(const std::string& date, double factor);
-		//double findClosestDate(const std::string& date);
 		std::map<std::string, double>::iterator findClosestDate(const std::string& date);
 
 	public:

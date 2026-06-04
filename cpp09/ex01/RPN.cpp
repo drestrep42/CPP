@@ -29,12 +29,9 @@ void RPN::evaluate(const std::string& expression)
             if (_stack.size() < 2) {
                 throw std::runtime_error("Invalid expression");
             }
-            std::cout << "Vuelta " << i << " token: " << token << std::endl;
             int rhs = _stack.top();
-            std::cout << "Stack top: " << _stack.top() << std::endl;
             _stack.pop();
             int lhs = _stack.top();
-            std::cout << "Stack top: " << _stack.top() << std::endl;
             _stack.pop();
             int result = 0;
 
