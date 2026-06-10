@@ -28,6 +28,9 @@ struct GroupNode
 
 typedef std::deque<GroupNode> GroupList;
 
+GroupList operator+(const GroupList& first, const GroupList& second);
+
+
 class PmergeMe
 {
     private:

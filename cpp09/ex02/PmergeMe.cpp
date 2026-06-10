@@ -76,6 +76,17 @@ static void clearGroupLabels(GroupNode& group)
 		group.values[i].label.clear();
 }
 
+static void labelUnpairedGroupAsB(GroupNode& group, int pairIndex)
+{
+	clearGroupLabels(group);
+	if (group.values.empty())
+		return;
+
+	std::ostringstream label;
+	label << 'b' << pairIndex;
+	group.values.back().label = label.str();
+}
+
 static void sortGroup(GroupNode& group, int level, int pairIndex)
 {
 	// Cada grupo representa una secuencia ya partida en dos mitades del mismo tamaño.
@@ -199,6 +210,50 @@ static void printRecursionStep(const char* label, int level,
 	std::cout << std::endl;
 }
 
+static void printGroupListByOwnSize(const GroupList& groups)
+{
+	for (size_t i = 0; i < groups.size(); ++i)
+	{
+		printGroup(groups[i].values, levelFromSize(groups[i].values.size()), false);
+		if (i + 1 < groups.size())
+			std::cout << " ";
+	}
+}
+
+static void splitMainPend(const GroupList& activeGroups,
+					  size_t expectedSize,
+					  GroupList& mainGroups,
+					  GroupList& pendGroups)
+{
+	for (size_t i = 0; i < activeGroups.size(); ++i)
+	{
+		const GroupNode& group = activeGroups[i];
+		if (i == 0)
+		{
+			mainGroups.push_back(group);
+			continue;
+		}
+
+		if (group.values.size() > expectedSize)
+		{
+			GroupNode left;
+			GroupNode right;
+			const size_t halfSize = group.values.size() / 2;
+			left.values.insert(left.values.end(), group.values.begin(), group.values.begin() + halfSize);
+			right.values.insert(right.values.end(), group.values.begin() + halfSize, group.values.end());
+			left.key = left.values.empty() ? 0 : left.values.back().value;
+			right.key = right.values.empty() ? 0 : right.values.back().value;
+
+			pendGroups.push_back(left);
+			mainGroups.push_back(right);
+		}
+		else
+		{
+			pendGroups.push_back(group);
+		}
+	}
+}
+
 static GroupNode combineGroups(const GroupNode& left, const GroupNode& right)
 {
 	// Une dos grupos contiguos preservando el orden original de sus elementos.
@@ -209,7 +264,54 @@ static GroupNode combineGroups(const GroupNode& left, const GroupNode& right)
 	return parent;
 }
 
-static void recurseGroups(const GroupList& currentGroups, int level, size_t totalSize)
+GroupList operator+(const GroupList& first, const GroupList& second)
+{
+	GroupList combined = first;
+	combined.insert(combined.end(), second.begin(), second.end());
+	return combined;
+}
+
+void insertion(const GroupList& currentGroups, const GroupList& main, const GroupList& pend, int level)
+{
+	(void)main;
+	(void)pend;
+	const size_t expectedSize = static_cast<size_t>(std::pow(2, level - 1));
+	GroupList activeGroups;
+	GroupList nonParticipating;
+	for (size_t i = 0; i < currentGroups.size(); ++i)
+	{
+		if (currentGroups[i].values.size() >= expectedSize)
+			activeGroups.push_back(currentGroups[i]);
+		else
+			nonParticipating.push_back(currentGroups[i]);
+	}
+
+	for (size_t i = 0; i < nonParticipating.size(); ++i)
+		clearGroupLabels(nonParticipating[i]);
+
+	GroupList mainGroups;
+	GroupList pendGroups;
+	splitMainPend(activeGroups, expectedSize, mainGroups, pendGroups);
+
+	std::cout << std::endl << std::endl << "Level: " << level << std::endl;
+	std::cout << "Current: ";
+	printGroupListByOwnSize(activeGroups);
+	if (!activeGroups.empty() && !nonParticipating.empty())
+		std::cout << " ";
+	printGroupListByOwnSize(nonParticipating);
+	std::cout << std::endl;
+	std::cout << "Main: ";
+	printGroupListByOwnSize(mainGroups);
+	std::cout << std::endl;
+	std::cout << "Pend: ";
+	printGroupListByOwnSize(pendGroups);
+	std::cout << std::endl;
+	std::cout << "Non-participating: ";
+	printGroupListByOwnSize(nonParticipating);
+	std::cout << std::endl;
+}
+
+static void recurseGroups(const GroupList& currentGroups, const GroupList& currentTails, int level, size_t totalSize)
 {
 	// Cuando el tamaño objetivo ya no cabe en el total, o queda un solo grupo, terminamos.
 	if (static_cast<size_t>(std::pow(2, level)) > totalSize || currentGroups.size() < 2)
@@ -227,7 +329,7 @@ static void recurseGroups(const GroupList& currentGroups, int level, size_t tota
 	std::cout << "Expected group size: " << expectedSize << std::endl;
 
 	GroupList nextGroups;
-	GroupList tails;
+	GroupList unpairedGroups;
 
 	// Agrupamos de dos en dos solo si ambos grupos tienen el tamaño esperado.
 	// Con el ejemplo anterior: (8) + (3) -> (8 3), luego (5) + (1) -> (5 1).
@@ -242,31 +344,53 @@ static void recurseGroups(const GroupList& currentGroups, int level, size_t tota
 		i += 2;
 	}
 
-	// Si sobra un grupo que no puede emparejarse, se guarda como "tail" y se arrastra al siguiente nivel.
+	// Si sobra un grupo del nivel actual, sigue formando parte del nivel actual
+	// pero no se compara porque ya no tiene pareja.
 	for (; i < currentGroups.size(); ++i)
 	{
-		tails.push_back(currentGroups[i]);
-		clearGroupLabels(tails.back());
+		GroupNode leftover = currentGroups[i];
+		labelUnpairedGroupAsB(leftover, static_cast<int>(nextGroups.size() + unpairedGroups.size() + 1));
+		unpairedGroups.push_back(leftover);
 	}
 
-	printRecursionStep("Before", level, nextGroups, tails);
+	GroupList currentLevelGroups = nextGroups + unpairedGroups;
+	GroupList visibleTails;
+	for (size_t i = 0; i < currentTails.size(); ++i)
+	{
+		if (currentTails[i].values.size() < expectedSize)
+			visibleTails.push_back(currentTails[i]);
+	}
+	printRecursionStep("Before", level, currentLevelGroups, visibleTails);
 
 	// Ordenamos cada grupo combinado según la regla de Ford-Johnson.
 	// En el ejemplo, [8 3] cambia a [3 8] y [5 1] a [1 5].
 	for (size_t i = 0; i < nextGroups.size(); ++i)
 		sortGroup(nextGroups[i], level, static_cast<int>(i) + 1);
 
-	printRecursionStep("After", level, nextGroups, tails);
+	currentLevelGroups = nextGroups + unpairedGroups;
+	printRecursionStep("After", level, currentLevelGroups, visibleTails);
 
 	std::cout << std::endl << std::endl;
 	// El siguiente nivel usa los grupos ya combinados más los tails sin tocar.
 	// Siguiendo el ejemplo: (8 3) (5 1) -> se vuelven a tratar como piezas del nivel superior.
-	GroupList nextCurrent = nextGroups;
-	for (size_t i = 0; i < tails.size(); ++i)
-		nextCurrent.push_back(tails[i]);
-	recurseGroups(nextCurrent, level + 1, totalSize);
+	recurseGroups(currentLevelGroups, visibleTails, level + 1, totalSize);
 
-	
+	//std::cout << "Last step of level " << level << ": ";
+	//printGroupList(nextGroups, tails, level);
+	//std::cout << std::endl;
+	//exit(0);
+	//if (level == 3)
+	//{
+	//	std::cout << "Next groups at level " << level << ": ";
+	//	printGroupList(nextGroups, GroupList(), level);
+	//	std::cout << std::endl;
+	//	std::cout << "Tails at level " << level << ": ";
+	//	printGroupList(tails, GroupList(), level);
+	//	std::cout << std::endl;
+	//	exit(0);
+	//}
+	GroupList debugCurrent = currentLevelGroups + visibleTails;
+	insertion(debugCurrent, currentLevelGroups, visibleTails, level);
 }
 
 static GroupList buildInitialGroups(std::deque<int>::iterator begin,
@@ -297,7 +421,7 @@ void PmergeMe::divideAndSort(std::deque<int>::iterator begin,
 	// Convertimos cada número en un grupo de tamaño 1 y arrancamos la recursión.
 	// A partir de aquí, el ejemplo va evolucionando nivel a nivel dentro de recurseGroups().
 	GroupList currentGroups = buildInitialGroups(begin, end);
-	recurseGroups(currentGroups, 1, static_cast<size_t>(end - begin));
+	recurseGroups(currentGroups, GroupList(), 1, static_cast<size_t>(end - begin));
 }
 
 void PmergeMe::FordJohnson()
