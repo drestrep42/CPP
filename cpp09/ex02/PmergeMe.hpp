@@ -6,16 +6,27 @@
 #include <stdexcept>
 #include <cstdlib>
 #include <algorithm>
-#include <vector>
 #include <cmath>
+#include <string>
+
+struct Element
+{
+    int value;
+    std::string label;
+
+    Element() : value(0), label() {}
+    Element(int v, const std::string& l) : value(v), label(l) {}
+};
 
 struct GroupNode
 {
-    std::deque<int> values;
+    std::deque<Element> values;
     int key;
+
+    GroupNode() : values(), key(0) {}
 };
 
-typedef std::vector<GroupNode> GroupList;
+typedef std::deque<GroupNode> GroupList;
 
 class PmergeMe
 {

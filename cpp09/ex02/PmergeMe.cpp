@@ -1,4 +1,5 @@
 #include "PmergeMe.hpp"
+#include <sstream>
 
 PmergeMe::PmergeMe()
 {
@@ -48,7 +49,34 @@ void PmergeMe::print(bool sorted) const
 	std::cout << std::endl;
 }
 
-static void sortGroup(GroupNode& group, int level)
+static void relabelGroupAsPair(GroupNode& group, int pairIndex)
+{
+	// Labels are scoped to the current recursion level, so clear any previous
+	// labels before assigning the new pair labels.
+	for (size_t i = 0; i < group.values.size(); ++i)
+		group.values[i].label.clear();
+
+	// Relabel only the representative element of each half.
+	// For level 1 the halves are singletons, so both elements get labels.
+	if (group.values.size() < 2)
+		return;
+
+	const size_t halfSize = group.values.size() / 2;
+	std::ostringstream bLabel;
+	bLabel << 'b' << pairIndex;
+	std::ostringstream aLabel;
+	aLabel << 'a' << pairIndex;
+	group.values[halfSize - 1].label = bLabel.str();
+	group.values.back().label = aLabel.str();
+}
+
+static void clearGroupLabels(GroupNode& group)
+{
+	for (size_t i = 0; i < group.values.size(); ++i)
+		group.values[i].label.clear();
+}
+
+static void sortGroup(GroupNode& group, int level, int pairIndex)
 {
 	// Cada grupo representa una secuencia ya partida en dos mitades del mismo tamaño.
 	// Ejemplo: si el grupo es [3 8 1 5] en level 2, se compara [3 8] con [1 5].
@@ -66,34 +94,39 @@ static void sortGroup(GroupNode& group, int level)
 
 	// Se crean las mitades izquierda y derecha a partir del grupo actual.
 	// En el ejemplo, left sería [3 8] y right sería [1 5]. Luego se compara el último elemento de cada mitad.
-	std::deque<int> left(group.values.begin(), group.values.begin() + childSize);
-	std::deque<int> right(group.values.begin() + childSize, group.values.begin() + childSize * 2);
+	std::deque<Element> left(group.values.begin(), group.values.begin() + childSize);
+	std::deque<Element> right(group.values.begin() + childSize, group.values.begin() + childSize * 2);
 
 	// Si el último elemento de la mitad izquierda es mayor que el último de la derecha, se intercambian las mitades.
-	if (!left.empty() && !right.empty() && left.back() > right.back())
+	if (!left.empty() && !right.empty() && left.back().value > right.back().value)
 	{
-		std::deque<int> swapped;
+		std::deque<Element> swapped;
 		swapped.insert(swapped.end(), right.begin(), right.end());
 		swapped.insert(swapped.end(), left.begin(), left.end());
 		group.values = swapped;
 	}
 	// Después de ordenar el grupo, se actualiza su clave al último elemento del grupo, que es el mayor.
 	//En el ejemplo, después de ordenar [3 8 1 5] a [1 5 3 8], la clave se actualiza a 8.
-	group.key = group.values.back();
+	group.key = group.values.back().value;
+
+	// Relabel elements in the pair: first half is b (smaller), second half is a (larger)
+	relabelGroupAsPair(group, pairIndex);
 }
 
-static void printValues(const std::deque<int>& values)
+static void printValues(const std::deque<Element>& values)
 {
 	// Imprime una secuencia plana separando sus elementos por espacios.
 	for (size_t i = 0; i < values.size(); ++i)
 	{
-		std::cout << values[i];
+		std::cout << values[i].value;
+		if (!values[i].label.empty())
+			std::cout << "[" << values[i].label << "]";
 		if (i + 1 != values.size())
 			std::cout << " ";
 	}
 }
 
-static void printGroup(const std::deque<int>& values, int level, bool levelOneNestedSingles)
+static void printGroup(const std::deque<Element>& values, int level, bool levelOneNestedSingles)
 {
 	// Reconstuye visualmente un grupo con paréntesis anidados para que se vea
 	// cómo los números se van agrupando por niveles en el algoritmo.
@@ -101,7 +134,15 @@ static void printGroup(const std::deque<int>& values, int level, bool levelOneNe
 	if (level <= 1)
 	{
 		if (levelOneNestedSingles && values.size() == 2)
-			std::cout << "(" << values[0] << ") (" << values[1] << ")";
+		{
+			std::cout << "(" << values[0].value;
+			if (!values[0].label.empty())
+				std::cout << "[" << values[0].label << "]";
+			std::cout << ") (" << values[1].value;
+			if (!values[1].label.empty())
+				std::cout << "[" << values[1].label << "]";
+			std::cout << ")";
+		}
 		else
 			printValues(values);
 	}
@@ -110,7 +151,7 @@ static void printGroup(const std::deque<int>& values, int level, bool levelOneNe
 		const size_t childSize = static_cast<size_t>(std::pow(2, level - 1));
 		for (size_t i = 0; i < values.size(); i += childSize)
 		{
-			std::deque<int> child(values.begin() + i, values.begin() + i + childSize);
+			std::deque<Element> child(values.begin() + i, values.begin() + i + childSize);
 			printGroup(child, level - 1, false);
 			if (i + childSize < values.size())
 				std::cout << " ";
@@ -164,7 +205,7 @@ static GroupNode combineGroups(const GroupNode& left, const GroupNode& right)
 	GroupNode parent;
 	parent.values = left.values;
 	parent.values.insert(parent.values.end(), right.values.begin(), right.values.end());
-	parent.key = parent.values.back();
+	parent.key = parent.values.back().value;
 	return parent;
 }
 
@@ -203,14 +244,17 @@ static void recurseGroups(const GroupList& currentGroups, int level, size_t tota
 
 	// Si sobra un grupo que no puede emparejarse, se guarda como "tail" y se arrastra al siguiente nivel.
 	for (; i < currentGroups.size(); ++i)
+	{
 		tails.push_back(currentGroups[i]);
+		clearGroupLabels(tails.back());
+	}
 
 	printRecursionStep("Before", level, nextGroups, tails);
 
 	// Ordenamos cada grupo combinado según la regla de Ford-Johnson.
 	// En el ejemplo, [8 3] cambia a [3 8] y [5 1] a [1 5].
 	for (size_t i = 0; i < nextGroups.size(); ++i)
-		sortGroup(nextGroups[i], level);
+		sortGroup(nextGroups[i], level, static_cast<int>(i) + 1);
 
 	printRecursionStep("After", level, nextGroups, tails);
 
@@ -235,7 +279,7 @@ static GroupList buildInitialGroups(std::deque<int>::iterator begin,
 	for (std::deque<int>::iterator it = begin; it != end; ++it)
 	{
 		GroupNode node;
-		node.values.push_back(*it);
+		node.values.push_back(Element(*it, ""));
 		node.key = *it;
 		groups.push_back(node);
 	}
