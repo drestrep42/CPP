@@ -7,12 +7,11 @@
 #include <cstdlib>
 #include <algorithm>
 #include <vector>
-
-typedef std::deque<int> IntDeque;
+#include <cmath>
 
 struct GroupNode
 {
-    IntDeque values;
+    std::deque<int> values;
     int key;
 };
 
@@ -34,7 +33,6 @@ class PmergeMe
 
 		void divideAndSort(std::deque<int>::iterator begin,
                    std::deque<int>::iterator end, int level);
-		void sort(int recursion_lvl);
 
 		void print(bool sorted) const;
 };
