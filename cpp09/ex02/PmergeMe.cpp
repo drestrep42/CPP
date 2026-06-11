@@ -175,16 +175,16 @@ static void printGroup(const std::deque<Element>& values, int level, bool levelO
 	std::cout << ")";
 }
 
-static int levelFromSize(size_t size)
+/* static int levelFromSize(size_t size)
 {
 	// Calcula el nivel mínimo necesario para representar una secuencia de ese tamaño.
 	int level = 1;
 	while ((static_cast<size_t>(std::pow(2, level))) < size)
 		++level;
 	return level;
-}
+} */
 
-static void printGroupList(const GroupList& groups,
+/* static void printGroupList(const GroupList& groups,
 					   const GroupList& tails,
 					   int level)
 {
@@ -202,9 +202,9 @@ static void printGroupList(const GroupList& groups,
 		if (i + 1 < tails.size())
 			std::cout << " ";
 	}
-}
+} */
 
-static void printRecursionStep(const char* label, int level,
+/* static void printRecursionStep(const char* label, int level,
 							   const GroupList& groups, const GroupList& tails)
 {
 	// Label es "Before" o "After" para indicar el estado del nivel actual antes y después de ordenar los grupos.
@@ -212,9 +212,9 @@ static void printRecursionStep(const char* label, int level,
 	std::cout << label << " level " << level << ": ";
 	printGroupList(groups, tails, level);
 	std::cout << std::endl;
-}
+} */
 
-static void printGroupListByOwnSize(const GroupList& groups)
+/* static void printGroupListByOwnSize(const GroupList& groups)
 {
 	for (size_t i = 0; i < groups.size(); ++i)
 	{
@@ -222,7 +222,7 @@ static void printGroupListByOwnSize(const GroupList& groups)
 		if (i + 1 < groups.size())
 			std::cout << " ";
 	}
-}
+} */
 
 static void splitMainPend(const GroupList& currentGroups,
 					  size_t expectedSize,
@@ -383,7 +383,7 @@ static size_t findBoundedInsertionPoint(const GroupList& mainGroups,
 
 // Jacobsthal order is iterated directly inside JacobsthalInsertion now.
 
-static void printMainPendState(const GroupList& mainGroups, const GroupList& pendGroups)
+/* static void printMainPendState(const GroupList& mainGroups, const GroupList& pendGroups)
 {
 	// Helper used only for debug output around each insertion step.
 	std::cout << "main: ";
@@ -392,7 +392,7 @@ static void printMainPendState(const GroupList& mainGroups, const GroupList& pen
 	std::cout << "pend: ";
 	printGroupListByOwnSize(pendGroups);
 	std::cout << std::endl;
-}
+} */
 
 // Implementa la inserción de los elementos de pendGroups en mainGroups siguiendo el orden de Jacobsthal.
 // Empieza con Jacobsthal número 3 (dos inserciones)
@@ -407,8 +407,8 @@ static GroupList JacobsthalInsertion(GroupList mainGroups, GroupList pendGroups,
 	if (pendGroups.empty())
 		return mainGroups;
 
-	std::cout << std::endl;
-	printMainPendState(mainGroups, pendGroups);
+	//std::cout << std::endl;
+	//printMainPendState(mainGroups, pendGroups);
 
 	int maxIndex = 0;
 	for (size_t i = 0; i < pendGroups.size(); ++i)
@@ -449,7 +449,7 @@ static GroupList JacobsthalInsertion(GroupList mainGroups, GroupList pendGroups,
 			pendGroups.erase(pendGroups.begin() + pendPos);
 
 			// Print the new state after this insertion so the progression is visible.
-			printMainPendState(mainGroups, pendGroups);
+			//printMainPendState(mainGroups, pendGroups);
 		}
 
 		const int next = current + 2 * previous;
@@ -461,10 +461,8 @@ static GroupList JacobsthalInsertion(GroupList mainGroups, GroupList pendGroups,
 
 }
 
-static GroupList insertion(const GroupList& currentGroups, const GroupList& main, const GroupList& pend, int level)
+static GroupList insertion(const GroupList& currentGroups, int level)
 {
-	(void)main;
-	(void)pend;
 	const size_t expectedSize = static_cast<size_t>(std::pow(2, level - 1));
 	GroupList relabeledCurrent;
 	GroupList mainGroups;
@@ -472,7 +470,7 @@ static GroupList insertion(const GroupList& currentGroups, const GroupList& main
 	GroupList nonParticipating;
 	splitMainPend(currentGroups, expectedSize, relabeledCurrent, mainGroups, pendGroups, nonParticipating);
 
-	std::cout << std::endl << std::endl << "Level: " << level << std::endl;
+	/* std::cout << std::endl << std::endl << "Level: " << level << std::endl;
 	std::cout << "Current: ";
 	printGroupListByOwnSize(relabeledCurrent);
 	if (!relabeledCurrent.empty() && !nonParticipating.empty())
@@ -487,7 +485,7 @@ static GroupList insertion(const GroupList& currentGroups, const GroupList& main
 	std::cout << std::endl;
 	std::cout << "Non-participating: ";
 	printGroupListByOwnSize(nonParticipating);
-	std::cout << std::endl;
+	std::cout << std::endl; */
 	GroupList mergedMain;
 	if (!pendGroups.empty())
 	{
@@ -504,7 +502,7 @@ static GroupList insertion(const GroupList& currentGroups, const GroupList& main
 		finalSequence.push_back(nonParticipating[i]);
 
 	// Print the flat sequence of integers as required.
-	std::cout << std::endl << "sequence: ";
+	/* std::cout << std::endl << "sequence: ";
 	bool first = true;
 	for (size_t g = 0; g < finalSequence.size(); ++g)
 	{
@@ -515,9 +513,20 @@ static GroupList insertion(const GroupList& currentGroups, const GroupList& main
 			first = false;
 		}
 	}
-	std::cout << std::endl << std::endl;
+	std::cout << std::endl << std::endl; */
 
 	return finalSequence;
+}
+
+static std::deque<int> flattenGroupList(const GroupList& groups)
+{
+	std::deque<int> flattened;
+	for (size_t g = 0; g < groups.size(); ++g)
+	{
+		for (size_t v = 0; v < groups[g].values.size(); ++v)
+			flattened.push_back(groups[g].values[v].value);
+	}
+	return flattened;
 }
 
 
@@ -535,9 +544,10 @@ static GroupList recurseGroups(const GroupList& currentGroups, const GroupList& 
 	// level 3 antes: ((3 8) (1 5)) (4)
 	// level 3 después: ((1 5) (3 8)) (4)
 	// La función imprime el estado antes y después de ordenar el nivel actual.
-	std::cout << "Recursing level " << level << " with " << currentGroups.size() << " groups" << std::endl;
+	
+	//std::cout << "Recursing level " << level << " with " << currentGroups.size() << " groups" << std::endl;
 	const size_t expectedSize = static_cast<size_t>(std::pow(2, level - 1));
-	std::cout << "Expected group size: " << expectedSize << std::endl;
+	//std::cout << "Expected group size: " << expectedSize << std::endl;
 
 	GroupList nextGroups;
 	GroupList unpairedGroups;
@@ -571,7 +581,7 @@ static GroupList recurseGroups(const GroupList& currentGroups, const GroupList& 
 		if (currentTails[i].values.size() < expectedSize)
 			visibleTails.push_back(currentTails[i]);
 	}
-	printRecursionStep("Before", level, currentLevelGroups, visibleTails);
+	//printRecursionStep("Before", level, currentLevelGroups, visibleTails);
 
 	// Ordenamos cada grupo combinado según la regla de Ford-Johnson.
 	// En el ejemplo, [8 3] cambia a [3 8] y [5 1] a [1 5].
@@ -579,9 +589,9 @@ static GroupList recurseGroups(const GroupList& currentGroups, const GroupList& 
 		sortGroup(nextGroups[i], level, static_cast<int>(i) + 1);
 
 	currentLevelGroups = nextGroups + unpairedGroups;
-	printRecursionStep("After", level, currentLevelGroups, visibleTails);
+	//printRecursionStep("After", level, currentLevelGroups, visibleTails);
 
-	std::cout << std::endl << std::endl;
+	// std::cout << std::endl << std::endl;
 	// El siguiente nivel usa los grupos ya combinados más los tails sin tocar.
 	// Siguiendo el ejemplo: (8 3) (5 1) -> se vuelven a tratar como piezas del nivel superior.
 	GroupList childResult = recurseGroups(currentLevelGroups, visibleTails, level + 1, totalSize);
@@ -603,7 +613,7 @@ static GroupList recurseGroups(const GroupList& currentGroups, const GroupList& 
 	// Use the childResult (sequence produced by the deeper level) as the
 	// current sequence to work with at this level, then append visible tails.
 	GroupList debugCurrent = childResult + visibleTails;
-	GroupList merged = insertion(debugCurrent, currentLevelGroups, visibleTails, level);
+	GroupList merged = insertion(debugCurrent, level);
 
 	// Return the merged sequence so the caller (previous recursion level)
 	// receives the concrete sequence to operate on.
@@ -627,23 +637,24 @@ static GroupList buildInitialGroups(std::deque<int>::iterator begin,
 	return groups;
 }
 
-void PmergeMe::divideAndSort(std::deque<int>::iterator begin,
+GroupList divideAndSort(std::deque<int>::iterator begin,
 							 std::deque<int>::iterator end,
 							 int level)
 {
 	(void)level;
 	if (begin == end)
-		return;
+		return GroupList();
 
 	// Convertimos cada número en un grupo de tamaño 1 y arrancamos la recursión.
 	// A partir de aquí, el ejemplo va evolucionando nivel a nivel dentro de recurseGroups().
 	GroupList currentGroups = buildInitialGroups(begin, end);
-	recurseGroups(currentGroups, GroupList(), 1, static_cast<size_t>(end - begin));
+	return recurseGroups(currentGroups, GroupList(), 1, static_cast<size_t>(end - begin));
 }
 
 void PmergeMe::FordJohnson()
 {
 	// Punto de entrada del ordenado: toma la deque completa y la pasa al proceso de partición.
 	// Ejemplo de flujo: [8 3 5 1 4] -> [(8) (3) (5) (1) (4)] -> [(8 3) (5 1) (4)] -> niveles superiores.
-	divideAndSort(_nbrs.begin(), _nbrs.end(), 1);
+	GroupList finalGroups = ::divideAndSort(_nbrs.begin(), _nbrs.end(), 1);
+	_nbrs = flattenGroupList(finalGroups);
 }
