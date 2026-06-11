@@ -1,5 +1,6 @@
 #include "PmergeMe.hpp"
 #include <sstream>
+#include <vector>
 
 PmergeMe::PmergeMe()
 {
@@ -160,7 +161,10 @@ static void printGroup(const std::deque<Element>& values, int level, bool levelO
 	else
 	{
 		const size_t childSize = static_cast<size_t>(std::pow(2, level - 1));
-		for (size_t i = 0; i < values.size(); i += childSize)
+		if (values.size() < childSize || (values.size() % childSize) != 0)
+			printValues(values);
+		else
+			for (size_t i = 0; i < values.size(); i += childSize)
 		{
 			std::deque<Element> child(values.begin() + i, values.begin() + i + childSize);
 			printGroup(child, level - 1, false);
@@ -220,37 +224,81 @@ static void printGroupListByOwnSize(const GroupList& groups)
 	}
 }
 
-static void splitMainPend(const GroupList& activeGroups,
+static void splitMainPend(const GroupList& currentGroups,
 					  size_t expectedSize,
+					  GroupList& relabeledCurrent,
 					  GroupList& mainGroups,
-					  GroupList& pendGroups)
+					  GroupList& pendGroups,
+					  GroupList& nonParticipating)
 {
-	for (size_t i = 0; i < activeGroups.size(); ++i)
+	std::deque<Element> flat;
+	for (size_t g = 0; g < currentGroups.size(); ++g)
 	{
-		const GroupNode& group = activeGroups[i];
-		if (i == 0)
+		for (size_t v = 0; v < currentGroups[g].values.size(); ++v)
+			flat.push_back(Element(currentGroups[g].values[v].value, ""));
+	}
+
+	// Build level elements of exactly expectedSize from the flattened sequence.
+	size_t pos = 0;
+	while (pos + expectedSize <= flat.size())
+	{
+		GroupNode node;
+		node.values.insert(node.values.end(), flat.begin() + pos, flat.begin() + pos + expectedSize);
+		node.key = node.values.back().value;
+		relabeledCurrent.push_back(node);
+		pos += expectedSize;
+	}
+
+	// Remaining elements are non-participating at this level.
+	if (pos < flat.size())
+	{
+		GroupNode remainder;
+		remainder.values.insert(remainder.values.end(), flat.begin() + pos, flat.end());
+		remainder.key = remainder.values.back().value;
+		nonParticipating.push_back(remainder);
+	}
+
+	// Relabel current per level: (b1,a1), (b2,a2), ... and possible trailing bN.
+	int pairIndex = 1;
+	for (size_t i = 0; i < relabeledCurrent.size(); i += 2)
+	{
+		clearGroupLabels(relabeledCurrent[i]);
+		if (!relabeledCurrent[i].values.empty())
 		{
-			mainGroups.push_back(group);
-			continue;
+			std::ostringstream bLabel;
+			bLabel << 'b' << pairIndex;
+			relabeledCurrent[i].values.back().label = bLabel.str();
 		}
 
-		if (group.values.size() > expectedSize)
+		if (i + 1 < relabeledCurrent.size())
 		{
-			GroupNode left;
-			GroupNode right;
-			const size_t halfSize = group.values.size() / 2;
-			left.values.insert(left.values.end(), group.values.begin(), group.values.begin() + halfSize);
-			right.values.insert(right.values.end(), group.values.begin() + halfSize, group.values.end());
-			left.key = left.values.empty() ? 0 : left.values.back().value;
-			right.key = right.values.empty() ? 0 : right.values.back().value;
-
-			pendGroups.push_back(left);
-			mainGroups.push_back(right);
+			clearGroupLabels(relabeledCurrent[i + 1]);
+			if (!relabeledCurrent[i + 1].values.empty())
+			{
+				std::ostringstream aLabel;
+				aLabel << 'a' << pairIndex;
+				relabeledCurrent[i + 1].values.back().label = aLabel.str();
+			}
 		}
+		++pairIndex;
+	}
+
+	if (relabeledCurrent.empty())
+		return;
+
+	// Main starts with {b1, a1} when a1 exists, then all remaining a's.
+	mainGroups.push_back(relabeledCurrent[0]);
+	if (relabeledCurrent.size() > 1)
+		mainGroups.push_back(relabeledCurrent[1]);
+
+	// Pend starts with the remaining b's from b2.
+	for (size_t i = 2; i < relabeledCurrent.size(); ++i)
+	{
+		if (!relabeledCurrent[i].values.empty() && !relabeledCurrent[i].values.back().label.empty()
+			&& relabeledCurrent[i].values.back().label[0] == 'a')
+			mainGroups.push_back(relabeledCurrent[i]);
 		else
-		{
-			pendGroups.push_back(group);
-		}
+			pendGroups.push_back(relabeledCurrent[i]);
 	}
 }
 
@@ -271,32 +319,163 @@ GroupList operator+(const GroupList& first, const GroupList& second)
 	return combined;
 }
 
-void insertion(const GroupList& currentGroups, const GroupList& main, const GroupList& pend, int level)
+static int getGroupLabelIndex(const GroupNode& group)
+{
+	// The label identifies which pair this group belongs to at the current level.
+	// We use the numeric suffix to know which main-group boundary the pend group
+	// should be compared against before inserting.
+	if (group.values.empty() || group.values.back().label.size() < 2)
+		return -1;
+	const std::string& label = group.values.back().label;
+	// Only labels of the form aN or bN are meaningful here.
+	if (label[0] != 'a' && label[0] != 'b')
+		return -1;
+	int index = 0;
+	for (size_t i = 1; i < label.size(); ++i)
+	{
+		// Parse the numeric suffix one digit at a time so we can match
+		// the pend group to its partner in the main chain.
+		if (label[i] < '0' || label[i] > '9')
+			return -1;
+		index = index * 10 + (label[i] - '0');
+	}
+	return index;
+}
+
+static size_t findBoundedInsertionPoint(const GroupList& mainGroups,
+											 const GroupNode& pendGroup)
+{
+	// This finds where the whole pend group should go in the current main chain.
+	// First we limit the search to the portion allowed by the corresponding aN
+	// boundary, then we compare only against each group's largest value.
+	const int pendIndex = getGroupLabelIndex(pendGroup);
+	const int boundIndex = pendIndex > 0 ? pendIndex : -1;
+	size_t searchLimit = mainGroups.size();
+
+	if (boundIndex > 0)
+	{
+		for (size_t i = 0; i < mainGroups.size(); ++i)
+		{
+			// Compare labels to stop at the matching aN element. That is the
+			// upper bound for the search area of this pend group.
+			if (getGroupLabelIndex(mainGroups[i]) == boundIndex)
+			{
+				searchLimit = i + 1;
+				break;
+			}
+		}
+	}
+
+	const int pendKey = pendGroup.values.empty() ? 0 : pendGroup.values.back().value;
+	for (size_t i = 0; i < searchLimit; ++i)
+	{
+		// Compare the pend group's largest value against the largest value of
+		// each candidate in the bounded search window.
+		if (!mainGroups[i].values.empty()
+			&& mainGroups[i].values.back().value > pendKey)
+			// Insert before the first group whose maximum is larger.
+			return i;
+	}
+	// If no larger candidate exists, append the pend group at the end of the
+	// bounded search window.
+	return searchLimit;
+}
+
+// Jacobsthal order is iterated directly inside JacobsthalInsertion now.
+
+static void printMainPendState(const GroupList& mainGroups, const GroupList& pendGroups)
+{
+	// Helper used only for debug output around each insertion step.
+	std::cout << "main: ";
+	printGroupListByOwnSize(mainGroups);
+	std::cout << std::endl;
+	std::cout << "pend: ";
+	printGroupListByOwnSize(pendGroups);
+	std::cout << std::endl;
+}
+
+// Implementa la inserción de los elementos de pendGroups en mainGroups siguiendo el orden de Jacobsthal.
+// Empieza con Jacobsthal número 3 (dos inserciones)
+// Luego Jacobsthal número 5 (tres inserciones)
+// Luego Jacobsthal número 11 (seis inserciones)
+// Etc
+static GroupList JacobsthalInsertion(GroupList mainGroups, GroupList pendGroups, int level)
+{
+	(void)level;
+	// Operate on copies and return the resulting mainGroups so callers can
+	// assemble the next-level sequence.
+	if (pendGroups.empty())
+		return mainGroups;
+
+	std::cout << std::endl;
+	printMainPendState(mainGroups, pendGroups);
+
+	int maxIndex = 0;
+	for (size_t i = 0; i < pendGroups.size(); ++i)
+	{
+		const int index = getGroupLabelIndex(pendGroups[i]);
+		if (index > maxIndex)
+			maxIndex = index;
+	}
+
+	// Iterate Jacobsthal blocks explicitly so we insert (current - previous)
+	// pend elements for each Jacobsthal number block. This ensures for j=3
+	// we insert 2 elements (3 - 1): b3 then b2.
+	int previous = 1;
+	int current = 3;
+	while (previous < maxIndex && !pendGroups.empty())
+	{
+		const int blockTop = (current < maxIndex) ? current : maxIndex;
+		// Insert indices from blockTop down to previous+1 (inclusive).
+		for (int idx = blockTop; idx > previous && !pendGroups.empty(); --idx)
+		{
+			// Locate the bN group selected by this Jacobsthal index.
+			size_t pendPos = pendGroups.size();
+			for (size_t i = 0; i < pendGroups.size(); ++i)
+			{
+				if (getGroupLabelIndex(pendGroups[i]) == idx)
+				{
+					pendPos = i;
+					break;
+				}
+			}
+			if (pendPos == pendGroups.size())
+				continue; // index not present in pendGroups
+
+			const GroupNode currentPend = pendGroups[pendPos];
+			// Compare against the bounded main chain to decide the insertion slot.
+			const size_t insertPos = findBoundedInsertionPoint(mainGroups, currentPend);
+			mainGroups.insert(mainGroups.begin() + insertPos, currentPend);
+			pendGroups.erase(pendGroups.begin() + pendPos);
+
+			// Print the new state after this insertion so the progression is visible.
+			printMainPendState(mainGroups, pendGroups);
+		}
+
+		const int next = current + 2 * previous;
+		previous = current;
+		current = next;
+	}
+
+	return mainGroups;
+
+}
+
+static GroupList insertion(const GroupList& currentGroups, const GroupList& main, const GroupList& pend, int level)
 {
 	(void)main;
 	(void)pend;
 	const size_t expectedSize = static_cast<size_t>(std::pow(2, level - 1));
-	GroupList activeGroups;
-	GroupList nonParticipating;
-	for (size_t i = 0; i < currentGroups.size(); ++i)
-	{
-		if (currentGroups[i].values.size() >= expectedSize)
-			activeGroups.push_back(currentGroups[i]);
-		else
-			nonParticipating.push_back(currentGroups[i]);
-	}
-
-	for (size_t i = 0; i < nonParticipating.size(); ++i)
-		clearGroupLabels(nonParticipating[i]);
-
+	GroupList relabeledCurrent;
 	GroupList mainGroups;
 	GroupList pendGroups;
-	splitMainPend(activeGroups, expectedSize, mainGroups, pendGroups);
+	GroupList nonParticipating;
+	splitMainPend(currentGroups, expectedSize, relabeledCurrent, mainGroups, pendGroups, nonParticipating);
 
 	std::cout << std::endl << std::endl << "Level: " << level << std::endl;
 	std::cout << "Current: ";
-	printGroupListByOwnSize(activeGroups);
-	if (!activeGroups.empty() && !nonParticipating.empty())
+	printGroupListByOwnSize(relabeledCurrent);
+	if (!relabeledCurrent.empty() && !nonParticipating.empty())
 		std::cout << " ";
 	printGroupListByOwnSize(nonParticipating);
 	std::cout << std::endl;
@@ -309,13 +488,45 @@ void insertion(const GroupList& currentGroups, const GroupList& main, const Grou
 	std::cout << "Non-participating: ";
 	printGroupListByOwnSize(nonParticipating);
 	std::cout << std::endl;
+	GroupList mergedMain;
+	if (!pendGroups.empty())
+	{
+		mergedMain = JacobsthalInsertion(mainGroups, pendGroups, level);
+	}
+	else
+	{
+		mergedMain = mainGroups;
+	}
+
+	// Build the final sequence: merged main followed by non-participating groups.
+	GroupList finalSequence = mergedMain;
+	for (size_t i = 0; i < nonParticipating.size(); ++i)
+		finalSequence.push_back(nonParticipating[i]);
+
+	// Print the flat sequence of integers as required.
+	std::cout << std::endl << "sequence: ";
+	bool first = true;
+	for (size_t g = 0; g < finalSequence.size(); ++g)
+	{
+		for (size_t v = 0; v < finalSequence[g].values.size(); ++v)
+		{
+			if (!first) std::cout << " ";
+			std::cout << finalSequence[g].values[v].value;
+			first = false;
+		}
+	}
+	std::cout << std::endl << std::endl;
+
+	return finalSequence;
 }
 
-static void recurseGroups(const GroupList& currentGroups, const GroupList& currentTails, int level, size_t totalSize)
+
+
+static GroupList recurseGroups(const GroupList& currentGroups, const GroupList& currentTails, int level, size_t totalSize)
 {
 	// Cuando el tamaño objetivo ya no cabe en el total, o queda un solo grupo, terminamos.
 	if (static_cast<size_t>(std::pow(2, level)) > totalSize || currentGroups.size() < 2)
-		return;
+		return currentGroups;
 
 	// En este punto imaginamos un ejemplo como este:
 	// level 1: (8) (3) (5) (1) (4)
@@ -373,7 +584,7 @@ static void recurseGroups(const GroupList& currentGroups, const GroupList& curre
 	std::cout << std::endl << std::endl;
 	// El siguiente nivel usa los grupos ya combinados más los tails sin tocar.
 	// Siguiendo el ejemplo: (8 3) (5 1) -> se vuelven a tratar como piezas del nivel superior.
-	recurseGroups(currentLevelGroups, visibleTails, level + 1, totalSize);
+	GroupList childResult = recurseGroups(currentLevelGroups, visibleTails, level + 1, totalSize);
 
 	//std::cout << "Last step of level " << level << ": ";
 	//printGroupList(nextGroups, tails, level);
@@ -389,8 +600,14 @@ static void recurseGroups(const GroupList& currentGroups, const GroupList& curre
 	//	std::cout << std::endl;
 	//	exit(0);
 	//}
-	GroupList debugCurrent = currentLevelGroups + visibleTails;
-	insertion(debugCurrent, currentLevelGroups, visibleTails, level);
+	// Use the childResult (sequence produced by the deeper level) as the
+	// current sequence to work with at this level, then append visible tails.
+	GroupList debugCurrent = childResult + visibleTails;
+	GroupList merged = insertion(debugCurrent, currentLevelGroups, visibleTails, level);
+
+	// Return the merged sequence so the caller (previous recursion level)
+	// receives the concrete sequence to operate on.
+	return merged;
 }
 
 static GroupList buildInitialGroups(std::deque<int>::iterator begin,
