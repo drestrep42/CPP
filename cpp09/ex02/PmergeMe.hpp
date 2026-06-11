@@ -30,25 +30,7 @@ typedef std::deque<GroupNode> GroupList;
 
 GroupList operator+(const GroupList& first, const GroupList& second);
 
-
-class PmergeMe
-{
-    private:
-        std::deque<int> _nbrs;
-
-    public:
-        PmergeMe();
-		PmergeMe(char **begin, char **end);
-        ~PmergeMe();
-        PmergeMe(const PmergeMe& other);
-        PmergeMe& operator=(const PmergeMe& other);
-
-		void FordJohnson();
-
-		void divideAndSort(std::deque<int>::iterator begin,
-                   std::deque<int>::iterator end, int level);
-
-		void print(bool sorted) const;
-};
+void FordJohnson(std::deque<int>& nbrs);
+void printDeque(const std::deque<int>& nbrs, bool sorted);
 
 #endif

@@ -2,49 +2,16 @@
 #include <sstream>
 #include <vector>
 
-PmergeMe::PmergeMe()
+void printDeque(const std::deque<int>& nbrs, bool sorted)
 {
-}
-
-PmergeMe::PmergeMe(char **begin, char **end)
-{
-	for (char **it = begin; it != end; ++it)
-	{
-		int nbr = std::atoi(*it);
-		if (nbr < 0)
-			throw std::invalid_argument("Negative numbers are not allowed");
-		_nbrs.push_back(nbr);
-	}
-}
-
-PmergeMe::~PmergeMe()
-{
-}
-
-PmergeMe::PmergeMe(const PmergeMe& other)
-{
-	*this = other;
-}
-
-PmergeMe& PmergeMe::operator=(const PmergeMe& other)
-{
-	if (this != &other)
-		this->_nbrs = other._nbrs;
-	return *this;
-}
-
-void PmergeMe::print(bool sorted) const
-{
-	// Imprime el contenido actual de la estructura con una etiqueta que indica si
-	// todavía representa el estado inicial o el resultado final ya ordenado.
 	if (!sorted)
 		std::cout << "Before: ";
 	else
 		std::cout << "After: ";
-	for (size_t i = 0; i < _nbrs.size(); ++i)
+	for (size_t i = 0; i < nbrs.size(); ++i)
 	{
-		std::cout << _nbrs[i];
-		if (i != _nbrs.size() - 1)
+		std::cout << nbrs[i];
+		if (i != nbrs.size() - 1)
 			std::cout << " ";
 	}
 	std::cout << std::endl;
@@ -52,13 +19,11 @@ void PmergeMe::print(bool sorted) const
 
 static void relabelGroupAsPair(GroupNode& group, int pairIndex)
 {
-	// Labels are scoped to the current recursion level, so clear any previous
-	// labels before assigning the new pair labels.
+	// Las etiquetas se asignan por nivel de recursión,
+	// así que se limpian las etiquetas anteriores antes de asignar el nuevo par.
 	for (size_t i = 0; i < group.values.size(); ++i)
 		group.values[i].label.clear();
 
-	// Relabel only the representative element of each half.
-	// For level 1 the halves are singletons, so both elements get labels.
 	if (group.values.size() < 2)
 		return;
 
@@ -71,12 +36,14 @@ static void relabelGroupAsPair(GroupNode& group, int pairIndex)
 	group.values.back().label = aLabel.str();
 }
 
+// Limpia las etiquetas de un grupo para que no interfieran con el etiquetado de niveles posteriores.
 static void clearGroupLabels(GroupNode& group)
 {
 	for (size_t i = 0; i < group.values.size(); ++i)
 		group.values[i].label.clear();
 }
 
+// Si un grupo queda sin pareja, se etiqueta como bN para que se inserte después de aN en el orden de Jacobsthal.
 static void labelUnpairedGroupAsB(GroupNode& group, int pairIndex)
 {
 	clearGroupLabels(group);
@@ -118,119 +85,23 @@ static void sortGroup(GroupNode& group, int level, int pairIndex)
 		group.values = swapped;
 	}
 	// Después de ordenar el grupo, se actualiza su clave al último elemento del grupo, que es el mayor.
-	//En el ejemplo, después de ordenar [3 8 1 5] a [1 5 3 8], la clave se actualiza a 8.
+	// En el ejemplo, después de ordenar [3 8 1 5] a [1 5 3 8], la clave se actualiza a 8.
 	group.key = group.values.back().value;
 
-	// Relabel elements in the pair: first half is b (smaller), second half is a (larger)
+	// Reetiqueta elementos en el par:
+	// la primera mitad es b (más pequeña), la segunda mitad es a (más grande)
 	relabelGroupAsPair(group, pairIndex);
 }
 
-static void printValues(const std::deque<Element>& values)
-{
-	// Imprime una secuencia plana separando sus elementos por espacios.
-	for (size_t i = 0; i < values.size(); ++i)
-	{
-		std::cout << values[i].value;
-		if (!values[i].label.empty())
-			std::cout << "[" << values[i].label << "]";
-		if (i + 1 != values.size())
-			std::cout << " ";
-	}
-}
-
-static void printGroup(const std::deque<Element>& values, int level, bool levelOneNestedSingles)
-{
-	// Reconstuye visualmente un grupo con paréntesis anidados para que se vea
-	// cómo los números se van agrupando por niveles en el algoritmo.
-	std::cout << "(";
-	if (level <= 1)
-	{
-		if (levelOneNestedSingles && values.size() == 2)
-		{
-			std::cout << "(" << values[0].value;
-			if (!values[0].label.empty())
-				std::cout << "[" << values[0].label << "]";
-			std::cout << ") (" << values[1].value;
-			if (!values[1].label.empty())
-				std::cout << "[" << values[1].label << "]";
-			std::cout << ")";
-		}
-		else
-			printValues(values);
-	}
-	else
-	{
-		const size_t childSize = static_cast<size_t>(std::pow(2, level - 1));
-		if (values.size() < childSize || (values.size() % childSize) != 0)
-			printValues(values);
-		else
-			for (size_t i = 0; i < values.size(); i += childSize)
-		{
-			std::deque<Element> child(values.begin() + i, values.begin() + i + childSize);
-			printGroup(child, level - 1, false);
-			if (i + childSize < values.size())
-				std::cout << " ";
-		}
-	}
-	std::cout << ")";
-}
-
-/* static int levelFromSize(size_t size)
-{
-	// Calcula el nivel mínimo necesario para representar una secuencia de ese tamaño.
-	int level = 1;
-	while ((static_cast<size_t>(std::pow(2, level))) < size)
-		++level;
-	return level;
-} */
-
-/* static void printGroupList(const GroupList& groups,
-					   const GroupList& tails,
-					   int level)
-{
-	// Imprime primero los grupos activos del nivel actual y luego los tails que
-	// no pudieron emparejarse pero siguen formando parte del estado visible.
-	for (size_t i = 0; i < groups.size(); ++i)
-	{
-		printGroup(groups[i].values, level, level == 1);
-		if (i + 1 < groups.size() || !tails.empty())
-			std::cout << " ";
-	}
-	for (size_t i = 0; i < tails.size(); ++i)
-	{
-		printGroup(tails[i].values, levelFromSize(tails[i].values.size()), false);
-		if (i + 1 < tails.size())
-			std::cout << " ";
-	}
-} */
-
-/* static void printRecursionStep(const char* label, int level,
-							   const GroupList& groups, const GroupList& tails)
-{
-	// Label es "Before" o "After" para indicar el estado del nivel actual antes y después de ordenar los grupos.
-	// Etiqueta un estado intermedio de la recursión para poder comparar el antes y el después.
-	std::cout << label << " level " << level << ": ";
-	printGroupList(groups, tails, level);
-	std::cout << std::endl;
-} */
-
-/* static void printGroupListByOwnSize(const GroupList& groups)
-{
-	for (size_t i = 0; i < groups.size(); ++i)
-	{
-		printGroup(groups[i].values, levelFromSize(groups[i].values.size()), false);
-		if (i + 1 < groups.size())
-			std::cout << " ";
-	}
-} */
-
-static void splitMainPend(const GroupList& currentGroups,
-					  size_t expectedSize,
+static void splitMainPend(const GroupList& currentGroups, size_t expectedSize,
 					  GroupList& relabeledCurrent,
 					  GroupList& mainGroups,
 					  GroupList& pendGroups,
 					  GroupList& nonParticipating)
 {
+	// El siguiente ciclo for aplana la secuencia de grupos en 
+	// una secuencia plana de elementos para luego reconstruir 
+	//los grupos de este nivel con el tamaño esperado.
 	std::deque<Element> flat;
 	for (size_t g = 0; g < currentGroups.size(); ++g)
 	{
@@ -238,7 +109,8 @@ static void splitMainPend(const GroupList& currentGroups,
 			flat.push_back(Element(currentGroups[g].values[v].value, ""));
 	}
 
-	// Build level elements of exactly expectedSize from the flattened sequence.
+	// Construye los grupos de este nivel a partir de la secuencia plana, 
+	// tomando bloques de tamaño esperado.
 	size_t pos = 0;
 	while (pos + expectedSize <= flat.size())
 	{
@@ -249,7 +121,9 @@ static void splitMainPend(const GroupList& currentGroups,
 		pos += expectedSize;
 	}
 
-	// Remaining elements are non-participating at this level.
+	// Los elementos restantes que no alcanzan a formar un grupo completo 
+	// se clasifican como no participantes y se guardan aparte 
+	// para ser añadidos al final de la secuencia final.
 	if (pos < flat.size())
 	{
 		GroupNode remainder;
@@ -258,7 +132,8 @@ static void splitMainPend(const GroupList& currentGroups,
 		nonParticipating.push_back(remainder);
 	}
 
-	// Relabel current per level: (b1,a1), (b2,a2), ... and possible trailing bN.
+	// Reetiqueta por nivel: (b1,a1), (b2,a2), ... y posible bN final.
+	// Esto se hace para marcar el rol de cada grupo en la inserción.
 	int pairIndex = 1;
 	for (size_t i = 0; i < relabeledCurrent.size(); i += 2)
 	{
@@ -286,12 +161,12 @@ static void splitMainPend(const GroupList& currentGroups,
 	if (relabeledCurrent.empty())
 		return;
 
-	// Main starts with {b1, a1} when a1 exists, then all remaining a's.
+	// Main empieza con {b1, a1} cuando a1 existe, luego todas las a restantes.
 	mainGroups.push_back(relabeledCurrent[0]);
 	if (relabeledCurrent.size() > 1)
 		mainGroups.push_back(relabeledCurrent[1]);
 
-	// Pend starts with the remaining b's from b2.
+	// Pend empieza con b2 si existe, luego todas las b restantes.
 	for (size_t i = 2; i < relabeledCurrent.size(); ++i)
 	{
 		if (!relabeledCurrent[i].values.empty() && !relabeledCurrent[i].values.back().label.empty()
@@ -319,22 +194,24 @@ GroupList operator+(const GroupList& first, const GroupList& second)
 	return combined;
 }
 
+// Dado un grupo pend, encuentra la posición donde debería insertarse en la cadena principal actual.
 static int getGroupLabelIndex(const GroupNode& group)
 {
-	// The label identifies which pair this group belongs to at the current level.
-	// We use the numeric suffix to know which main-group boundary the pend group
-	// should be compared against before inserting.
+
+	// La etiqueta identifica a qué par pertenece este grupo en el nivel actual. 
+	// Usamos el sufijo numérico para saber contra qué límite de main-group debe 
+	// compararse el grupo pend antes de insertarlo.
 	if (group.values.empty() || group.values.back().label.size() < 2)
 		return -1;
 	const std::string& label = group.values.back().label;
-	// Only labels of the form aN or bN are meaningful here.
+
 	if (label[0] != 'a' && label[0] != 'b')
 		return -1;
 	int index = 0;
 	for (size_t i = 1; i < label.size(); ++i)
 	{
-		// Parse the numeric suffix one digit at a time so we can match
-		// the pend group to its partner in the main chain.
+		// Parsea el sufijo numérico de la etiqueta para obtener el índice 
+		// del par al que pertenece este grupo pend.
 		if (label[i] < '0' || label[i] > '9')
 			return -1;
 		index = index * 10 + (label[i] - '0');
@@ -342,12 +219,12 @@ static int getGroupLabelIndex(const GroupNode& group)
 	return index;
 }
 
-static size_t findBoundedInsertionPoint(const GroupList& mainGroups,
-											 const GroupNode& pendGroup)
+static size_t findBoundedInsertionPoint(const GroupList& mainGroups, const GroupNode& pendGroup)
 {
-	// This finds where the whole pend group should go in the current main chain.
-	// First we limit the search to the portion allowed by the corresponding aN
-	// boundary, then we compare only against each group's largest value.
+
+	// Esta función encuentra la posición donde se debe insertar un grupo pend en la cadena principal actual.
+	// Primero, se limita la búsqueda a la porción permitida por la etiqueta aN correspondiente, 
+	// luego se compara solo contra el valor más grande de cada grupo.
 	const int pendIndex = getGroupLabelIndex(pendGroup);
 	const int boundIndex = pendIndex > 0 ? pendIndex : -1;
 	size_t searchLimit = mainGroups.size();
@@ -356,8 +233,8 @@ static size_t findBoundedInsertionPoint(const GroupList& mainGroups,
 	{
 		for (size_t i = 0; i < mainGroups.size(); ++i)
 		{
-			// Compare labels to stop at the matching aN element. That is the
-			// upper bound for the search area of this pend group.
+			// Compara las etiquetas para detenerse en el elemento aN correspondiente. 
+			// Ese es el límite superior del área de búsqueda de este grupo pend.
 			if (getGroupLabelIndex(mainGroups[i]) == boundIndex)
 			{
 				searchLimit = i + 1;
@@ -366,50 +243,33 @@ static size_t findBoundedInsertionPoint(const GroupList& mainGroups,
 		}
 	}
 
+	// Dentro del área de búsqueda limitada, se compara 
+	// el valor más grande del grupo pend contra el valor más grande de cada grupo main.
 	const int pendKey = pendGroup.values.empty() ? 0 : pendGroup.values.back().value;
 	for (size_t i = 0; i < searchLimit; ++i)
 	{
-		// Compare the pend group's largest value against the largest value of
-		// each candidate in the bounded search window.
 		if (!mainGroups[i].values.empty()
 			&& mainGroups[i].values.back().value > pendKey)
-			// Insert before the first group whose maximum is larger.
+			// Se inserta el grupo pend antes del primer grupo main que tenga un valor más grande.
 			return i;
 	}
-	// If no larger candidate exists, append the pend group at the end of the
-	// bounded search window.
+	// Si no se encuentra ningún grupo main con un valor más grande dentro del área de búsqueda,
+	// se inserta el grupo pend al final de esa área.
 	return searchLimit;
 }
-
-// Jacobsthal order is iterated directly inside JacobsthalInsertion now.
-
-/* static void printMainPendState(const GroupList& mainGroups, const GroupList& pendGroups)
-{
-	// Helper used only for debug output around each insertion step.
-	std::cout << "main: ";
-	printGroupListByOwnSize(mainGroups);
-	std::cout << std::endl;
-	std::cout << "pend: ";
-	printGroupListByOwnSize(pendGroups);
-	std::cout << std::endl;
-} */
 
 // Implementa la inserción de los elementos de pendGroups en mainGroups siguiendo el orden de Jacobsthal.
 // Empieza con Jacobsthal número 3 (dos inserciones)
 // Luego Jacobsthal número 5 (tres inserciones)
 // Luego Jacobsthal número 11 (seis inserciones)
 // Etc
-static GroupList JacobsthalInsertion(GroupList mainGroups, GroupList pendGroups, int level)
+static GroupList JacobsthalInsertion(GroupList mainGroups, GroupList pendGroups)
 {
-	(void)level;
-	// Operate on copies and return the resulting mainGroups so callers can
-	// assemble the next-level sequence.
 	if (pendGroups.empty())
 		return mainGroups;
 
-	//std::cout << std::endl;
-	//printMainPendState(mainGroups, pendGroups);
-
+	// Primero, encontramos el índice máximo de etiqueta entre los grupos
+	// pend para saber hasta dónde llegar con los números de Jacobsthal.
 	int maxIndex = 0;
 	for (size_t i = 0; i < pendGroups.size(); ++i)
 	{
@@ -418,18 +278,19 @@ static GroupList JacobsthalInsertion(GroupList mainGroups, GroupList pendGroups,
 			maxIndex = index;
 	}
 
-	// Iterate Jacobsthal blocks explicitly so we insert (current - previous)
-	// pend elements for each Jacobsthal number block. This ensures for j=3
-	// we insert 2 elements (3 - 1): b3 then b2.
+	// Iteramos explícitamente por bloques de números de Jacobsthal para insertar (current - previous)
+	// elementos pend por cada bloque de número de Jacobsthal.
+	// Esto asegura que para j=3 insertamos 2 elementos (3 - 1): b3 luego b2.
 	int previous = 1;
 	int current = 3;
 	while (previous < maxIndex && !pendGroups.empty())
 	{
 		const int blockTop = (current < maxIndex) ? current : maxIndex;
-		// Insert indices from blockTop down to previous+1 (inclusive).
+		// Inserta índices desde blockTop hasta previous+1 (incluídos).
 		for (int idx = blockTop; idx > previous && !pendGroups.empty(); --idx)
 		{
-			// Locate the bN group selected by this Jacobsthal index.
+			// Localiza el grupo bN seleccionado por este índice de Jacobsthal.
+			// Si no existe, se salta al siguiente índice.
 			size_t pendPos = pendGroups.size();
 			for (size_t i = 0; i < pendGroups.size(); ++i)
 			{
@@ -440,84 +301,57 @@ static GroupList JacobsthalInsertion(GroupList mainGroups, GroupList pendGroups,
 				}
 			}
 			if (pendPos == pendGroups.size())
-				continue; // index not present in pendGroups
+				continue;
 
 			const GroupNode currentPend = pendGroups[pendPos];
-			// Compare against the bounded main chain to decide the insertion slot.
+			
+			// Compara el grupo pend actual contra la cadena principal limitada por su etiqueta aN para decidir dónde insertarlo.
 			const size_t insertPos = findBoundedInsertionPoint(mainGroups, currentPend);
 			mainGroups.insert(mainGroups.begin() + insertPos, currentPend);
 			pendGroups.erase(pendGroups.begin() + pendPos);
-
-			// Print the new state after this insertion so the progression is visible.
-			//printMainPendState(mainGroups, pendGroups);
 		}
 
+		// Avanza al siguiente bloque de números de Jacobsthal.
 		const int next = current + 2 * previous;
 		previous = current;
 		current = next;
 	}
 
 	return mainGroups;
-
 }
 
 static GroupList insertion(const GroupList& currentGroups, int level)
 {
 	const size_t expectedSize = static_cast<size_t>(std::pow(2, level - 1));
+	
 	GroupList relabeledCurrent;
 	GroupList mainGroups;
 	GroupList pendGroups;
 	GroupList nonParticipating;
+
+	// Dividimos la secuencia actual en grupos de tamaño esperado y 
+	// los reetiquetamos para marcar sus roles en la inserción.
 	splitMainPend(currentGroups, expectedSize, relabeledCurrent, mainGroups, pendGroups, nonParticipating);
 
-	/* std::cout << std::endl << std::endl << "Level: " << level << std::endl;
-	std::cout << "Current: ";
-	printGroupListByOwnSize(relabeledCurrent);
-	if (!relabeledCurrent.empty() && !nonParticipating.empty())
-		std::cout << " ";
-	printGroupListByOwnSize(nonParticipating);
-	std::cout << std::endl;
-	std::cout << "Main: ";
-	printGroupListByOwnSize(mainGroups);
-	std::cout << std::endl;
-	std::cout << "Pend: ";
-	printGroupListByOwnSize(pendGroups);
-	std::cout << std::endl;
-	std::cout << "Non-participating: ";
-	printGroupListByOwnSize(nonParticipating);
-	std::cout << std::endl; */
+	// Si hay grupos pend, se insertan en main siguiendo el orden de Jacobsthal.
 	GroupList mergedMain;
 	if (!pendGroups.empty())
-	{
-		mergedMain = JacobsthalInsertion(mainGroups, pendGroups, level);
-	}
+		mergedMain = JacobsthalInsertion(mainGroups, pendGroups);
 	else
-	{
 		mergedMain = mainGroups;
-	}
 
-	// Build the final sequence: merged main followed by non-participating groups.
+	// Construye la secuencia final de este nivel: 
+	// primero la cadena principal con los pend insertados, 
+	// luego los grupos no participantes al final.
 	GroupList finalSequence = mergedMain;
 	for (size_t i = 0; i < nonParticipating.size(); ++i)
 		finalSequence.push_back(nonParticipating[i]);
 
-	// Print the flat sequence of integers as required.
-	/* std::cout << std::endl << "sequence: ";
-	bool first = true;
-	for (size_t g = 0; g < finalSequence.size(); ++g)
-	{
-		for (size_t v = 0; v < finalSequence[g].values.size(); ++v)
-		{
-			if (!first) std::cout << " ";
-			std::cout << finalSequence[g].values[v].value;
-			first = false;
-		}
-	}
-	std::cout << std::endl << std::endl; */
-
 	return finalSequence;
 }
 
+
+// Aplana la secuencia de grupos resultante en una secuencia plana de enteros para devolver el resultado final.
 static std::deque<int> flattenGroupList(const GroupList& groups)
 {
 	std::deque<int> flattened;
@@ -529,31 +363,20 @@ static std::deque<int> flattenGroupList(const GroupList& groups)
 	return flattened;
 }
 
-
-
 static GroupList recurseGroups(const GroupList& currentGroups, const GroupList& currentTails, int level, size_t totalSize)
 {
 	// Cuando el tamaño objetivo ya no cabe en el total, o queda un solo grupo, terminamos.
 	if (static_cast<size_t>(std::pow(2, level)) > totalSize || currentGroups.size() < 2)
 		return currentGroups;
-
-	// En este punto imaginamos un ejemplo como este:
-	// level 1: (8) (3) (5) (1) (4)
-	// level 2 antes: (8 3) (5 1) (4)
-	// level 2 después: (3 8) (1 5) (4)
-	// level 3 antes: ((3 8) (1 5)) (4)
-	// level 3 después: ((1 5) (3 8)) (4)
-	// La función imprime el estado antes y después de ordenar el nivel actual.
 	
-	//std::cout << "Recursing level " << level << " with " << currentGroups.size() << " groups" << std::endl;
+	// Tamaño esperado de cada grupo en este nivel. 
+	// Para level 2, cada grupo tendrá 2^(2-1) = 2 elementos.
 	const size_t expectedSize = static_cast<size_t>(std::pow(2, level - 1));
-	//std::cout << "Expected group size: " << expectedSize << std::endl;
 
 	GroupList nextGroups;
 	GroupList unpairedGroups;
 
 	// Agrupamos de dos en dos solo si ambos grupos tienen el tamaño esperado.
-	// Con el ejemplo anterior: (8) + (3) -> (8 3), luego (5) + (1) -> (5 1).
 	size_t i = 0;
 	while (i + 1 < currentGroups.size())
 	{
@@ -581,52 +404,33 @@ static GroupList recurseGroups(const GroupList& currentGroups, const GroupList& 
 		if (currentTails[i].values.size() < expectedSize)
 			visibleTails.push_back(currentTails[i]);
 	}
-	//printRecursionStep("Before", level, currentLevelGroups, visibleTails);
 
 	// Ordenamos cada grupo combinado según la regla de Ford-Johnson.
-	// En el ejemplo, [8 3] cambia a [3 8] y [5 1] a [1 5].
 	for (size_t i = 0; i < nextGroups.size(); ++i)
 		sortGroup(nextGroups[i], level, static_cast<int>(i) + 1);
 
 	currentLevelGroups = nextGroups + unpairedGroups;
-	//printRecursionStep("After", level, currentLevelGroups, visibleTails);
 
-	// std::cout << std::endl << std::endl;
 	// El siguiente nivel usa los grupos ya combinados más los tails sin tocar.
-	// Siguiendo el ejemplo: (8 3) (5 1) -> se vuelven a tratar como piezas del nivel superior.
 	GroupList childResult = recurseGroups(currentLevelGroups, visibleTails, level + 1, totalSize);
 
-	//std::cout << "Last step of level " << level << ": ";
-	//printGroupList(nextGroups, tails, level);
-	//std::cout << std::endl;
-	//exit(0);
-	//if (level == 3)
-	//{
-	//	std::cout << "Next groups at level " << level << ": ";
-	//	printGroupList(nextGroups, GroupList(), level);
-	//	std::cout << std::endl;
-	//	std::cout << "Tails at level " << level << ": ";
-	//	printGroupList(tails, GroupList(), level);
-	//	std::cout << std::endl;
-	//	exit(0);
-	//}
-	// Use the childResult (sequence produced by the deeper level) as the
-	// current sequence to work with at this level, then append visible tails.
+
+	// Usamos el resultado de la recursión (la secuencia producida por el nivel más profundo
+	//como la secuencia actual con la que trabajar en este nivel, luego se añaden los tails visibles.
 	GroupList debugCurrent = childResult + visibleTails;
 	GroupList merged = insertion(debugCurrent, level);
 
-	// Return the merged sequence so the caller (previous recursion level)
-	// receives the concrete sequence to operate on.
+	// Devuelve la secuencia resultante de este nivel, que se usará como base para el siguiente nivel de recursión.
 	return merged;
 }
 
+// Construye la lista inicial de grupos a partir de la secuencia de números dada,
+// donde cada grupo es un singleton con un número y su clave es ese mismo número.
 static GroupList buildInitialGroups(std::deque<int>::iterator begin,
 								  std::deque<int>::iterator end)
 {
 	GroupList groups;
 
-	// Paso inicial del ejemplo: si la entrada es [8 3 5 1], aquí se convierte en
-	// [(8), (3), (5), (1)] para poder aplicar el esquema de pares y niveles.
 	for (std::deque<int>::iterator it = begin; it != end; ++it)
 	{
 		GroupNode node;
@@ -637,24 +441,14 @@ static GroupList buildInitialGroups(std::deque<int>::iterator begin,
 	return groups;
 }
 
-GroupList divideAndSort(std::deque<int>::iterator begin,
-							 std::deque<int>::iterator end,
-							 int level)
+void FordJohnson(std::deque<int>& nbrs)
 {
-	(void)level;
-	if (begin == end)
-		return GroupList();
-
-	// Convertimos cada número en un grupo de tamaño 1 y arrancamos la recursión.
-	// A partir de aquí, el ejemplo va evolucionando nivel a nivel dentro de recurseGroups().
-	GroupList currentGroups = buildInitialGroups(begin, end);
-	return recurseGroups(currentGroups, GroupList(), 1, static_cast<size_t>(end - begin));
-}
-
-void PmergeMe::FordJohnson()
-{
-	// Punto de entrada del ordenado: toma la deque completa y la pasa al proceso de partición.
-	// Ejemplo de flujo: [8 3 5 1 4] -> [(8) (3) (5) (1) (4)] -> [(8 3) (5 1) (4)] -> niveles superiores.
-	GroupList finalGroups = ::divideAndSort(_nbrs.begin(), _nbrs.end(), 1);
-	_nbrs = flattenGroupList(finalGroups);
+	if (nbrs.empty())
+	{
+		nbrs.clear();
+		return;
+	}
+	GroupList currentGroups = buildInitialGroups(nbrs.begin(), nbrs.end());
+	GroupList finalGroups = recurseGroups(currentGroups, GroupList(), 1, static_cast<size_t>(nbrs.end() - nbrs.begin()));
+	nbrs = flattenGroupList(finalGroups);
 }

@@ -11,12 +11,20 @@ int main (int argc, char **argv)
 
 	try
 	{
-		PmergeMe pmergeMe(argv + 1, argv + argc);
+		std::deque<int> nbrs;
+		for (char **it = argv + 1; it != argv + argc; ++it)
+		{
+			int nbr = std::atoi(*it);
+			if (nbr < 0)
+				throw std::invalid_argument("Negative numbers are not allowed");
+			nbrs.push_back(nbr);
+		}
+
+		printDeque(nbrs, false);
 		const std::clock_t start = std::clock();
-		pmergeMe.print(false);
-		pmergeMe.FordJohnson();
-		pmergeMe.print(true);
+		FordJohnson(nbrs);
 		const std::clock_t end = std::clock();
+		printDeque(nbrs, true);
 		const double elapsedUs = static_cast<double>(end - start) * 1000000.0 / CLOCKS_PER_SEC;
 		std::cout << "Time to process a range of " << (argc - 1)
 			<< " elements with std::deque: " << elapsedUs << " us" << std::endl;
