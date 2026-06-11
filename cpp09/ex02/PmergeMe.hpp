@@ -2,6 +2,7 @@
 # define PMERGEME_HPP
 
 #include <deque>
+#include <vector>
 #include <iostream>
 #include <stdexcept>
 #include <cstdlib>
@@ -30,7 +31,24 @@ typedef std::deque<GroupNode> GroupList;
 
 GroupList operator+(const GroupList& first, const GroupList& second);
 
+
+struct GroupNodeVector
+{
+    std::vector<Element> values;
+    int key;
+
+    GroupNodeVector() : values(), key(0) {}
+};
+
+typedef std::vector<GroupNodeVector> GroupListVector;
+
+GroupListVector operator+(const GroupListVector& first, const GroupListVector& second);
+
 void FordJohnson(std::deque<int>& nbrs);
 void printDeque(const std::deque<int>& nbrs, bool sorted);
+
+
+void FordJohnsonVector(std::vector<int>& nbrs);
+void printVector(const std::vector<int>& nbrs, bool sorted);
 
 #endif

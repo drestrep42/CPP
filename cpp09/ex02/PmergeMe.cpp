@@ -194,6 +194,13 @@ GroupList operator+(const GroupList& first, const GroupList& second)
 	return combined;
 }
 
+GroupListVector operator+(const GroupListVector& first, const GroupListVector& second)
+{
+	GroupListVector combined = first;
+	combined.insert(combined.end(), second.begin(), second.end());
+	return combined;
+}
+
 // Dado un grupo pend, encuentra la posición donde debería insertarse en la cadena principal actual.
 static int getGroupLabelIndex(const GroupNode& group)
 {
@@ -451,4 +458,365 @@ void FordJohnson(std::deque<int>& nbrs)
 	GroupList currentGroups = buildInitialGroups(nbrs.begin(), nbrs.end());
 	GroupList finalGroups = recurseGroups(currentGroups, GroupList(), 1, static_cast<size_t>(nbrs.end() - nbrs.begin()));
 	nbrs = flattenGroupList(finalGroups);
+}
+
+
+
+// -------------------- VECTOR VERSIONS --------------------
+
+void printVector(const std::vector<int>& nbrs, bool sorted)
+{
+	if (!sorted)
+		std::cout << "Before: ";
+	else
+		std::cout << "After: ";
+	for (size_t i = 0; i < nbrs.size(); ++i)
+	{
+		std::cout << nbrs[i];
+		if (i != nbrs.size() - 1)
+			std::cout << " ";
+	}
+	std::cout << std::endl;
+}
+
+static GroupListVector buildInitialGroupsVector(std::vector<int>::iterator begin,
+										  std::vector<int>::iterator end)
+{
+	GroupListVector groups;
+
+	for (std::vector<int>::iterator it = begin; it != end; ++it)
+	{
+		GroupNodeVector node;
+		node.values.push_back(Element(*it, ""));
+		node.key = *it;
+		groups.push_back(node);
+	}
+	return groups;
+}
+
+static std::vector<int> flattenGroupListVector(const GroupListVector& groups)
+{
+	std::vector<int> flattened;
+	for (size_t g = 0; g < groups.size(); ++g)
+	{
+		for (size_t v = 0; v < groups[g].values.size(); ++v)
+			flattened.push_back(groups[g].values[v].value);
+	}
+	return flattened;
+}
+
+static void relabelGroupAsPairVector(GroupNodeVector& group, int pairIndex)
+{
+	for (size_t i = 0; i < group.values.size(); ++i)
+		group.values[i].label.clear();
+
+	if (group.values.size() < 2)
+		return;
+
+	const size_t halfSize = group.values.size() / 2;
+	std::ostringstream bLabel;
+	bLabel << 'b' << pairIndex;
+	std::ostringstream aLabel;
+	aLabel << 'a' << pairIndex;
+	group.values[halfSize - 1].label = bLabel.str();
+	group.values.back().label = aLabel.str();
+}
+
+static void clearGroupLabelsVector(GroupNodeVector& group)
+{
+	for (size_t i = 0; i < group.values.size(); ++i)
+		group.values[i].label.clear();
+}
+
+static void labelUnpairedGroupAsBVector(GroupNodeVector& group, int pairIndex)
+{
+	clearGroupLabelsVector(group);
+	if (group.values.empty())
+		return;
+
+	std::ostringstream label;
+	label << 'b' << pairIndex;
+	group.values.back().label = label.str();
+}
+
+static void sortGroupVector(GroupNodeVector& group, int level, int pairIndex)
+{
+	if (group.values.size() < 2)
+		return;
+
+	const size_t childSize = static_cast<size_t>(std::pow(2, level - 1));
+	if (group.values.size() < childSize * 2)
+		return;
+
+	std::vector<Element> left(group.values.begin(), group.values.begin() + childSize);
+	std::vector<Element> right(group.values.begin() + childSize, group.values.begin() + childSize * 2);
+
+	if (!left.empty() && !right.empty() && left.back().value > right.back().value)
+	{
+		std::vector<Element> swapped;
+		swapped.insert(swapped.end(), right.begin(), right.end());
+		swapped.insert(swapped.end(), left.begin(), left.end());
+		group.values = swapped;
+	}
+	group.key = group.values.back().value;
+
+	relabelGroupAsPairVector(group, pairIndex);
+}
+
+static void splitMainPendVector(const GroupListVector& currentGroups, size_t expectedSize,
+					  GroupListVector& relabeledCurrent,
+					  GroupListVector& mainGroups,
+					  GroupListVector& pendGroups,
+					  GroupListVector& nonParticipating)
+{
+	std::vector<Element> flat;
+	for (size_t g = 0; g < currentGroups.size(); ++g)
+	{
+		for (size_t v = 0; v < currentGroups[g].values.size(); ++v)
+			flat.push_back(Element(currentGroups[g].values[v].value, ""));
+	}
+
+	size_t pos = 0;
+	while (pos + expectedSize <= flat.size())
+	{
+		GroupNodeVector node;
+		node.values.insert(node.values.end(), flat.begin() + pos, flat.begin() + pos + expectedSize);
+		node.key = node.values.back().value;
+		relabeledCurrent.push_back(node);
+		pos += expectedSize;
+	}
+
+	if (pos < flat.size())
+	{
+		GroupNodeVector remainder;
+		remainder.values.insert(remainder.values.end(), flat.begin() + pos, flat.end());
+		remainder.key = remainder.values.back().value;
+		nonParticipating.push_back(remainder);
+	}
+
+	int pairIndex = 1;
+	for (size_t i = 0; i < relabeledCurrent.size(); i += 2)
+	{
+		clearGroupLabelsVector(relabeledCurrent[i]);
+		if (!relabeledCurrent[i].values.empty())
+		{
+			std::ostringstream bLabel;
+			bLabel << 'b' << pairIndex;
+			relabeledCurrent[i].values.back().label = bLabel.str();
+		}
+
+		if (i + 1 < relabeledCurrent.size())
+		{
+			clearGroupLabelsVector(relabeledCurrent[i + 1]);
+			if (!relabeledCurrent[i + 1].values.empty())
+			{
+				std::ostringstream aLabel;
+				aLabel << 'a' << pairIndex;
+				relabeledCurrent[i + 1].values.back().label = aLabel.str();
+			}
+		}
+		++pairIndex;
+	}
+
+	if (relabeledCurrent.empty())
+		return;
+
+	mainGroups.push_back(relabeledCurrent[0]);
+	if (relabeledCurrent.size() > 1)
+		mainGroups.push_back(relabeledCurrent[1]);
+
+	for (size_t i = 2; i < relabeledCurrent.size(); ++i)
+	{
+		if (!relabeledCurrent[i].values.empty() && !relabeledCurrent[i].values.back().label.empty()
+			&& relabeledCurrent[i].values.back().label[0] == 'a')
+			mainGroups.push_back(relabeledCurrent[i]);
+		else
+			pendGroups.push_back(relabeledCurrent[i]);
+	}
+}
+
+static GroupNodeVector combineGroupsVector(const GroupNodeVector& left, const GroupNodeVector& right)
+{
+	GroupNodeVector parent;
+	parent.values = left.values;
+	parent.values.insert(parent.values.end(), right.values.begin(), right.values.end());
+	parent.key = parent.values.back().value;
+	return parent;
+}
+
+static int getGroupLabelIndexVector(const GroupNodeVector& group)
+{
+	if (group.values.empty() || group.values.back().label.size() < 2)
+		return -1;
+	const std::string& label = group.values.back().label;
+
+	if (label[0] != 'a' && label[0] != 'b')
+		return -1;
+	int index = 0;
+	for (size_t i = 1; i < label.size(); ++i)
+	{
+		if (label[i] < '0' || label[i] > '9')
+			return -1;
+		index = index * 10 + (label[i] - '0');
+	}
+	return index;
+}
+
+static size_t findBoundedInsertionPointVector(const GroupListVector& mainGroups, const GroupNodeVector& pendGroup)
+{
+	const int pendIndex = getGroupLabelIndexVector(pendGroup);
+	const int boundIndex = pendIndex > 0 ? pendIndex : -1;
+	size_t searchLimit = mainGroups.size();
+
+	if (boundIndex > 0)
+	{
+		for (size_t i = 0; i < mainGroups.size(); ++i)
+		{
+			if (getGroupLabelIndexVector(mainGroups[i]) == boundIndex)
+			{
+				searchLimit = i + 1;
+				break;
+			}
+		}
+	}
+
+	const int pendKey = pendGroup.values.empty() ? 0 : pendGroup.values.back().value;
+	for (size_t i = 0; i < searchLimit; ++i)
+	{
+		if (!mainGroups[i].values.empty()
+			&& mainGroups[i].values.back().value > pendKey)
+			return i;
+	}
+	return searchLimit;
+}
+
+static GroupListVector JacobsthalInsertionVector(GroupListVector mainGroups, GroupListVector pendGroups)
+{
+	if (pendGroups.empty())
+		return mainGroups;
+
+	int maxIndex = 0;
+	for (size_t i = 0; i < pendGroups.size(); ++i)
+	{
+		const int index = getGroupLabelIndexVector(pendGroups[i]);
+		if (index > maxIndex)
+			maxIndex = index;
+	}
+
+	int previous = 1;
+	int current = 3;
+	while (previous < maxIndex && !pendGroups.empty())
+	{
+		const int blockTop = (current < maxIndex) ? current : maxIndex;
+		for (int idx = blockTop; idx > previous && !pendGroups.empty(); --idx)
+		{
+			size_t pendPos = pendGroups.size();
+			for (size_t i = 0; i < pendGroups.size(); ++i)
+			{
+				if (getGroupLabelIndexVector(pendGroups[i]) == idx)
+				{
+					pendPos = i;
+					break;
+				}
+			}
+			if (pendPos == pendGroups.size())
+				continue;
+
+			const GroupNodeVector currentPend = pendGroups[pendPos];
+			const size_t insertPos = findBoundedInsertionPointVector(mainGroups, currentPend);
+			mainGroups.insert(mainGroups.begin() + insertPos, currentPend);
+			pendGroups.erase(pendGroups.begin() + pendPos);
+		}
+
+		const int next = current + 2 * previous;
+		previous = current;
+		current = next;
+	}
+
+	return mainGroups;
+}
+
+static GroupListVector insertionVector(const GroupListVector& currentGroups, int level)
+{
+	const size_t expectedSize = static_cast<size_t>(std::pow(2, level - 1));
+	
+	GroupListVector relabeledCurrent;
+	GroupListVector mainGroups;
+	GroupListVector pendGroups;
+	GroupListVector nonParticipating;
+
+	splitMainPendVector(currentGroups, expectedSize, relabeledCurrent, mainGroups, pendGroups, nonParticipating);
+
+	GroupListVector mergedMain;
+	if (!pendGroups.empty())
+		mergedMain = JacobsthalInsertionVector(mainGroups, pendGroups);
+	else
+		mergedMain = mainGroups;
+
+	GroupListVector finalSequence = mergedMain;
+	for (size_t i = 0; i < nonParticipating.size(); ++i)
+		finalSequence.push_back(nonParticipating[i]);
+
+	return finalSequence;
+}
+
+static GroupListVector recurseGroupsVector(const GroupListVector& currentGroups, const GroupListVector& currentPend, int level, size_t totalSize)
+{
+	if (static_cast<size_t>(std::pow(2, level)) > totalSize || currentGroups.size() < 2)
+		return currentGroups;
+	
+	const size_t expectedSize = static_cast<size_t>(std::pow(2, level - 1));
+
+	GroupListVector nextGroups;
+	GroupListVector unpairedGroups;
+
+	size_t i = 0;
+	while (i + 1 < currentGroups.size())
+	{
+		if (currentGroups[i].values.size() != expectedSize
+			|| currentGroups[i + 1].values.size() != expectedSize)
+			break;
+
+		nextGroups.push_back(combineGroupsVector(currentGroups[i], currentGroups[i + 1]));
+		i += 2;
+	}
+
+	for (; i < currentGroups.size(); ++i)
+	{
+		GroupNodeVector leftover = currentGroups[i];
+		labelUnpairedGroupAsBVector(leftover, static_cast<int>(nextGroups.size() + unpairedGroups.size() + 1));
+		unpairedGroups.push_back(leftover);
+	}
+
+	GroupListVector currentLevelGroups = nextGroups + unpairedGroups;
+	GroupListVector visiblePend;
+	for (size_t i = 0; i < currentPend.size(); ++i)
+	{
+		if (currentPend[i].values.size() < expectedSize)
+			visiblePend.push_back(currentPend[i]);
+	}
+
+	for (size_t i = 0; i < nextGroups.size(); ++i)
+		sortGroupVector(nextGroups[i], level, static_cast<int>(i) + 1);
+
+	currentLevelGroups = nextGroups + unpairedGroups;
+
+	GroupListVector childResult = recurseGroupsVector(currentLevelGroups, visiblePend, level + 1, totalSize);
+
+	GroupListVector debugCurrent = childResult + visiblePend;
+	GroupListVector merged = insertionVector(debugCurrent, level);
+
+	return merged;
+}
+
+void FordJohnsonVector(std::vector<int>& nbrs)
+{
+	if (nbrs.empty())
+	{
+		nbrs.clear();
+		return;
+	}
+	GroupListVector currentGroups = buildInitialGroupsVector(nbrs.begin(), nbrs.end());
+	GroupListVector finalGroups = recurseGroupsVector(currentGroups, GroupListVector(), 1, static_cast<size_t>(nbrs.end() - nbrs.begin()));
+	nbrs = flattenGroupListVector(finalGroups);
 }
