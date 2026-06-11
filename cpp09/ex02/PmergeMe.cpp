@@ -363,7 +363,7 @@ static std::deque<int> flattenGroupList(const GroupList& groups)
 	return flattened;
 }
 
-static GroupList recurseGroups(const GroupList& currentGroups, const GroupList& currentTails, int level, size_t totalSize)
+static GroupList recurseGroups(const GroupList& currentGroups, const GroupList& currentPend, int level, size_t totalSize)
 {
 	// Cuando el tamaño objetivo ya no cabe en el total, o queda un solo grupo, terminamos.
 	if (static_cast<size_t>(std::pow(2, level)) > totalSize || currentGroups.size() < 2)
@@ -398,11 +398,11 @@ static GroupList recurseGroups(const GroupList& currentGroups, const GroupList& 
 	}
 
 	GroupList currentLevelGroups = nextGroups + unpairedGroups;
-	GroupList visibleTails;
-	for (size_t i = 0; i < currentTails.size(); ++i)
+	GroupList visiblePend;
+	for (size_t i = 0; i < currentPend.size(); ++i)
 	{
-		if (currentTails[i].values.size() < expectedSize)
-			visibleTails.push_back(currentTails[i]);
+		if (currentPend[i].values.size() < expectedSize)
+			visiblePend.push_back(currentPend[i]);
 	}
 
 	// Ordenamos cada grupo combinado según la regla de Ford-Johnson.
@@ -411,13 +411,13 @@ static GroupList recurseGroups(const GroupList& currentGroups, const GroupList& 
 
 	currentLevelGroups = nextGroups + unpairedGroups;
 
-	// El siguiente nivel usa los grupos ya combinados más los tails sin tocar.
-	GroupList childResult = recurseGroups(currentLevelGroups, visibleTails, level + 1, totalSize);
+	// El siguiente nivel usa los grupos ya combinados más los pend sin tocar.
+	GroupList childResult = recurseGroups(currentLevelGroups, visiblePend, level + 1, totalSize);
 
 
-	// Usamos el resultado de la recursión (la secuencia producida por el nivel más profundo
-	//como la secuencia actual con la que trabajar en este nivel, luego se añaden los tails visibles.
-	GroupList debugCurrent = childResult + visibleTails;
+	// Usamos el resultado de la recursión (la secuencia producida por el nivel más profundo)
+	// como la secuencia actual con la que trabajar en este nivel, luego se añaden los pend visibles.
+	GroupList debugCurrent = childResult + visiblePend;
 	GroupList merged = insertion(debugCurrent, level);
 
 	// Devuelve la secuencia resultante de este nivel, que se usará como base para el siguiente nivel de recursión.
